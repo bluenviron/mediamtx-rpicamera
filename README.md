@@ -44,3 +44,17 @@ This is embedded into all MediaMTX releases and shouldn't normally be downloaded
    ```
 
 4. The resulting executables will be available in `mtxrpicam_32` and `mtxrpicam_64`
+
+## Installation
+
+1. Download MediaMTX source code
+
+2. Run `go generate ./...`
+
+3. Copy `mtxrpicam` inside `mediamtx/internal/staticsources/rpicamera/mtxrpicam_64` (if the Raspberry Pi OS is 64-bit) or inside `mediamtx/internal/staticsources/rpicamera/mtxrpicam_32` (if the Raspberry Pi OS is 32-bit)
+
+4. Compile MediaMTX
+
+   ```sh
+   go build .
+   ```
