@@ -2,9 +2,9 @@
 
 Raspberry Pi Camera component for [MediaMTX](https://github.com/bluenviron/mediamtx).
 
-This is embed into all MediaMTX releases and shouldn't normally be downloaded unless you want to recompile it.
-
 This is a C-based executable that pulls the Raspberry Camera video feed, encodes it and makes the compressed video available to the server, while listening for incoming commands.
+
+This is embedded into all MediaMTX releases and shouldn't normally be downloaded unless you want to recompile it.
 
 ## Compile
 
