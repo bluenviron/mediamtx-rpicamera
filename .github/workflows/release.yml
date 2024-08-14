@@ -16,8 +16,8 @@ jobs:
 
     - uses: actions/upload-artifact@v3
       with:
-        name: rpicc_32
-        path: binaries/rpicc_32
+        path: rpicc_32
+        name: binaries/rpicc_32
 
   build_64:
     runs-on: ubuntu-22.04
@@ -29,8 +29,8 @@ jobs:
 
     - uses: actions/upload-artifact@v3
       with:
-        name: rpicc_64
-        path: binaries/rpicc_64
+        path: rpicc_64
+        name: binaries/rpicc_64
 
   github_release:
     needs:
