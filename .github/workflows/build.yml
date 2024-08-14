@@ -7,7 +7,7 @@ on:
     branches: [ main ]
 
 jobs:
-  build_32_bit:
+  build_32:
     runs-on: ubuntu-22.04
 
     steps:
@@ -15,7 +15,7 @@ jobs:
 
     - run: make -f utils.mk build32
 
-  build_64_bit:
+  build_64:
     runs-on: ubuntu-22.04
 
     steps:
