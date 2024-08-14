@@ -40,7 +40,7 @@ static const unsigned char decoding_table[256] = {
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 };
 
-char* base64_decode(const char *data) {
+char *base64_decode(const char *data) {
     size_t input_length = strlen(data);
     if (input_length % 4 != 0) {
         return NULL;
@@ -55,7 +55,7 @@ char* base64_decode(const char *data) {
         (output_length)--;
     }
 
-    unsigned char* output = (unsigned char *)malloc(output_length + 1);
+    unsigned char *output = (unsigned char *)malloc(output_length + 1);
     if (output == NULL) {
         return NULL;
     }
