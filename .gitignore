@@ -1,4 +1,4 @@
 *.o
 text_font.*
-rpicc
-rpicc_*
+mtxrpicam
+mtxrpicam_*

@@ -29,7 +29,7 @@ WORKDIR /s
 COPY . .
 RUN make -j$$(nproc)
 FROM $(ALPINE_IMAGE)
-COPY --from=build /s/rpicc /s/rpicc
+COPY --from=build /s/mtxrpicam /s/mtxrpicam
 endef
 export DOCKERFILE_BUILD32
 
@@ -48,14 +48,14 @@ WORKDIR /s
 COPY . .
 RUN make -j$$(nproc)
 FROM $(ALPINE_IMAGE)
-COPY --from=build /s/rpicc /s/rpicc
+COPY --from=build /s/mtxrpicam /s/mtxrpicam
 endef
 export DOCKERFILE_BUILD64
 
 build32:
 	echo "$$DOCKERFILE_BUILD32" | docker build . -f - -t build32
-	docker run --rm -v $(PWD):/o build32 sh -c "mv /s/rpicc /o/rpicc_32"
+	docker run --rm -v $(PWD):/o build32 sh -c "mv /s/mtxrpicam /o/mtxrpicam_32"
 
 build64:
 	echo "$$DOCKERFILE_BUILD64" | docker build . -f - -t build64
-	docker run --rm -v $(PWD):/o build64 sh -c "mv /s/rpicc /o/rpicc_64"
+	docker run --rm -v $(PWD):/o build64 sh -c "mv /s/mtxrpicam /o/mtxrpicam_64"

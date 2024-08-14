@@ -29,7 +29,7 @@ This is embedded into all MediaMTX releases and shouldn't normally be downloaded
    make -j$(nproc)
    ```
 
-4. The resulting executable will be available in `rpicc`
+4. The resulting executable will be available in `mtxrpicam`
 
 ## Cross-compile
 
@@ -43,4 +43,4 @@ This is embedded into all MediaMTX releases and shouldn't normally be downloaded
    make -f utils.mk build
    ```
 
-4. The resulting executables will be available in `rpicc_32` and `rpicc_64`
+4. The resulting executables will be available in `mtxrpicam_32` and `mtxrpicam_64`

@@ -16,8 +16,8 @@ jobs:
 
     - uses: actions/upload-artifact@v3
       with:
-        path: rpicc_32
-        name: rpicc_32
+        path: mtxrpicam_32
+        name: mtxrpicam_32
 
   build_64:
     runs-on: ubuntu-22.04
@@ -29,8 +29,8 @@ jobs:
 
     - uses: actions/upload-artifact@v3
       with:
-        path: rpicc_64
-        name: rpicc_64
+        path: mtxrpicam_64
+        name: mtxrpicam_64
 
   github_release:
     needs:
@@ -41,12 +41,12 @@ jobs:
     steps:
     - uses: actions/download-artifact@v3
       with:
-        name: rpicc_32
+        name: mtxrpicam_32
         path: binaries/
 
     - uses: actions/download-artifact@v3
       with:
-        name: rpicc_64
+        name: mtxrpicam_64
         path: binaries/
 
     - uses: actions/github-script@v6

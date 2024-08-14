@@ -1,4 +1,4 @@
-all: rpicc
+all: mtxrpicam
 
 #################################################
 # text font
@@ -17,7 +17,7 @@ $(TEXT_FONT_TARGET): text_font.ttf
 	xxd --include $< > $@
 
 #################################################
-# rpicc
+# mtxrpicam
 
 CFLAGS = \
 	-Ofast \
@@ -64,5 +64,5 @@ DEPENDENCIES = \
 %.o: %.cpp $(DEPENDENCIES)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
-rpicc: $(OBJS)
+mtxrpicam: $(OBJS)
 	$(CXX) $^ $(LDFLAGS) -o $@
