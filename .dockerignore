@@ -1,0 +1,4 @@
+*.o
+text_font.*
+rpicc
+rpicc_*

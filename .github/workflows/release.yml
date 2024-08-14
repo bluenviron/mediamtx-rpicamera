@@ -1,0 +1,72 @@
+name: release
+
+on:
+  push:
+    tags:
+    - 'v*'
+
+jobs:
+  build_32_bit:
+    runs-on: ubuntu-22.04
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - run: make -f utils.mk build32
+
+    - uses: actions/upload-artifact@v3
+      with:
+        name: rpicc
+        path: binaries/rpicc_32
+
+  build_64_bit:
+    runs-on: ubuntu-22.04
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - run: make -f utils.mk build64
+
+    - uses: actions/upload-artifact@v3
+      with:
+        name: rpicc
+        path: binaries/rpicc_64
+
+  github_release:
+    needs:
+    - build_32_bit
+    - build_64_bit
+    runs-on: ubuntu-22.04
+
+    steps:
+    - uses: actions/download-artifact@v3
+      with:
+        name: binaries
+        path: binaries
+
+    - uses: actions/github-script@v6
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        script: |
+          const fs = require('fs').promises;
+          const { repo: { owner, repo } } = context;
+
+          const currentRelease = context.ref.split('/')[2];
+
+          const res = await github.rest.repos.createRelease({
+            owner,
+            repo,
+            tag_name: currentRelease,
+            name: currentRelease,
+          });
+          const release_id = res.data.id;
+
+          for (const name of await fs.readdir('./binaries/')) {
+            await github.rest.repos.uploadReleaseAsset({
+              owner,
+              repo,
+              release_id,
+              name,
+              data: await fs.readFile(`./binaries/${name}`),
+            });
+          }
