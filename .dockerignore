@@ -1,4 +1,4 @@
 *.o
-text_font.*
-mtxrpicam
-mtxrpicam_*
+/deps
+/prefix
+/mtxrpicam_*

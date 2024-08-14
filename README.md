@@ -15,12 +15,17 @@ This is embedded into all MediaMTX releases and shouldn't normally be downloaded
    ```sh
    sudo apt install -y \
    g++ \
-   pkg-config \
    make \
-   libcamera-dev \
-   libfreetype-dev \
    xxd \
-   wget
+   wget \
+   git \
+   cmake \
+   meson \
+   patch \
+   pkg-config \
+   python3-jinja2 \
+   python3-yaml \
+   python3-ply
    ```
 
 3. Build:
@@ -29,7 +34,7 @@ This is embedded into all MediaMTX releases and shouldn't normally be downloaded
    make -j$(nproc)
    ```
 
-   This will produce `mtxrpicam_32` or `mtxrpicam_64` (depending on the architecture).
+   This will produce the `mtxrpicam_32` or `mtxrpicam_64` folder (depending on the architecture).
 
 ## Cross-compile
 
@@ -43,9 +48,9 @@ This is embedded into all MediaMTX releases and shouldn't normally be downloaded
    make -f utils.mk build
    ```
 
-   This will produce `mtxrpicam_32` and `mtxrpicam_64`.
+   This will produce the `mtxrpicam_32` and `mtxrpicam_64` folders.
 
-## Installation
+## Install
 
 1. Download MediaMTX source code and open a terminal in it
 

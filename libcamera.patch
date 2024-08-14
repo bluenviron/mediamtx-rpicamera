@@ -1,0 +1,26 @@
+diff --git a/meson.build b/meson.build
+index 58bb9893..41fc661f 100644
+--- a/meson.build
++++ b/meson.build
+@@ -2,7 +2,7 @@
+
+ project('libcamera', 'c', 'cpp',
+     meson_version : '>= 0.60',
+-    version : '0.3.0',
++    version : '9.9.9',
+     default_options : [
+         'werror=true',
+         'warning_level=2',
+diff --git a/src/libcamera/meson.build b/src/libcamera/meson.build
+index 89504cee..20c588cb 100644
+--- a/src/libcamera/meson.build
++++ b/src/libcamera/meson.build
+@@ -61,7 +61,7 @@ includes = [
+
+ libcamera_deps = []
+
+-libatomic = cc.find_library('atomic', required : false)
++libatomic = cc.find_library('atomic', required : true, static : true)
+ libthreads = dependency('threads')
+
+ subdir('base')
