@@ -16,7 +16,7 @@ jobs:
 
     - uses: actions/upload-artifact@v3
       with:
-        name: rpicc
+        name: rpicc_32
         path: binaries/rpicc_32
 
   build_64:
@@ -29,7 +29,7 @@ jobs:
 
     - uses: actions/upload-artifact@v3
       with:
-        name: rpicc
+        name: rpicc_64
         path: binaries/rpicc_64
 
   github_release:
