@@ -10,7 +10,7 @@ This is embedded into all MediaMTX releases and shouldn't normally be downloaded
 
 1. You must be on a Raspberry Pi, running Raspberry Pi OS Bullseye
 
-2. Install the build dependencies:
+2. Install build dependencies:
 
    ```sh
    sudo apt install -y \
