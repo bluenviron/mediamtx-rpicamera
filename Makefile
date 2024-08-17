@@ -1,4 +1,10 @@
-all: mtxrpicam
+ifeq ($(shell gcc -dumpmachine),aarch64-linux-gnu)
+  EXECUTABLE_NAME = mtxrpicam_64
+else
+  EXECUTABLE_NAME = mtxrpicam_32
+endif
+
+all: $(EXECUTABLE_NAME)
 
 #################################################
 # text font
@@ -64,5 +70,5 @@ DEPENDENCIES = \
 %.o: %.cpp $(DEPENDENCIES)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
-mtxrpicam: $(OBJS)
+$(EXECUTABLE_NAME): $(OBJS)
 	$(CXX) $^ $(LDFLAGS) -o $@
