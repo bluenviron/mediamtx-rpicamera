@@ -29,7 +29,7 @@ This is embedded into all MediaMTX releases and shouldn't normally be downloaded
    make -j$(nproc)
    ```
 
-4. The resulting executable will be available in `mtxrpicam`
+   This will produce `mtxrpicam_32` or `mtxrpicam_64` (depending on the architecture).
 
 ## Cross-compile
 
@@ -43,7 +43,7 @@ This is embedded into all MediaMTX releases and shouldn't normally be downloaded
    make -f utils.mk build
    ```
 
-4. The resulting executables will be available in `mtxrpicam_32` and `mtxrpicam_64`
+   This will produce `mtxrpicam_32` and `mtxrpicam_64`.
 
 ## Installation
 
@@ -51,7 +51,7 @@ This is embedded into all MediaMTX releases and shouldn't normally be downloaded
 
 2. Run `go generate ./...`
 
-3. Copy `mtxrpicam` inside `internal/staticsources/rpicamera/mtxrpicam_64` (if the Raspberry Pi OS is 64-bit) or inside `internal/staticsources/rpicamera/mtxrpicam_32` (if the Raspberry Pi OS is 32-bit)
+3. Copy `mtxrpicam_32` and/or `mtxrpicam_64` inside `internal/staticsources/rpicamera/`
 
 4. Compile MediaMTX
 
