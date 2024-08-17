@@ -1,0 +1,66 @@
+name: test
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build_32:
+    runs-on: ubuntu-22.04
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - run: make -f utils.mk build32
+
+    - uses: actions/upload-artifact@v4
+      with:
+        path: mtxrpicam_32
+        name: mtxrpicam_32
+
+  build_64:
+    runs-on: ubuntu-22.04
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - run: make -f utils.mk build64
+
+    - uses: actions/upload-artifact@v4
+      with:
+        path: mtxrpicam_64
+        name: mtxrpicam_64
+
+  test_32:
+    needs: build_32
+    runs-on: ubuntu-22.04
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - uses: actions/download-artifact@v4
+      with:
+        name: mtxrpicam_32
+        path: .
+
+    - run: chmod +x mtxrpicam_32
+
+    - run: make -f utils.mk test32
+
+  test_64:
+    needs: build_64
+    runs-on: ubuntu-22.04
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - uses: actions/download-artifact@v4
+      with:
+        name: mtxrpicam_64
+        path: .
+
+    - run: chmod +x mtxrpicam_64
+
+    - run: make -f utils.mk test64

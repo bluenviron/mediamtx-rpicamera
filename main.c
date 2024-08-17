@@ -35,6 +35,13 @@ static void on_encoder_output(uint64_t ts, const uint8_t *buf, uint64_t size) {
 }
 
 int main() {
+    // this is meant to test that dependencies have been loaded correctly
+    // therefore a simple "return 0" is enough.
+    if (strlen(getenv("TEST")) != 0) {
+        printf("test passed\n");
+        return 0;
+    }
+
     int pipe_conf_fd = atoi(getenv("PIPE_CONF_FD"));
     pipe_video_fd = atoi(getenv("PIPE_VIDEO_FD"));
 
