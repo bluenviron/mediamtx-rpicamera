@@ -33,6 +33,7 @@ $(OPENSSL_TARGET): deps/openssl
 	no-threads \
 	no-quic \
 	no-uplink \
+	no-tests \
 	&& make -j$$(nproc) \
 	&& make install_sw
 
