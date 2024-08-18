@@ -41,6 +41,7 @@ typedef struct {
     char *af_speed;
     float lens_position;
     window_t *af_window;
+    unsigned int flicker_period;
     bool text_overlay_enable;
     char *text_overlay;
 
