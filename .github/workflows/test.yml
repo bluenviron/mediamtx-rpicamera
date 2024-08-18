@@ -13,7 +13,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - run: make -f utils.mk build32
+    - run: make -f utils.mk build_32
 
     - uses: actions/upload-artifact@v4
       with:
@@ -26,14 +26,14 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - run: make -f utils.mk build64
+    - run: make -f utils.mk build_64
 
     - uses: actions/upload-artifact@v4
       with:
         path: mtxrpicam_64
         name: mtxrpicam_64
 
-  test_32:
+  test_bullseye_32:
     needs: build_32
     runs-on: ubuntu-22.04
 
@@ -43,13 +43,13 @@ jobs:
     - uses: actions/download-artifact@v4
       with:
         name: mtxrpicam_32
-        path: .
+        path: mtxrpicam_32
 
-    - run: chmod +x mtxrpicam_32
+    - run: chmod +x ./mtxrpicam_32/exe
 
-    - run: make -f utils.mk test32
+    - run: make -f utils.mk test_bullseye_32
 
-  test_64:
+  test_bullseye_64:
     needs: build_64
     runs-on: ubuntu-22.04
 
@@ -59,8 +59,40 @@ jobs:
     - uses: actions/download-artifact@v4
       with:
         name: mtxrpicam_64
-        path: .
+        path: mtxrpicam_64
 
-    - run: chmod +x mtxrpicam_64
+    - run: chmod +x ./mtxrpicam_64/exe
 
-    - run: make -f utils.mk test64
+    - run: make -f utils.mk test_bullseye_64
+
+  test_bookworm_32:
+    needs: build_32
+    runs-on: ubuntu-22.04
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - uses: actions/download-artifact@v4
+      with:
+        name: mtxrpicam_32
+        path: mtxrpicam_32
+
+    - run: chmod +x ./mtxrpicam_32/exe
+
+    - run: make -f utils.mk test_bookworm_32
+
+  test_bookworm_64:
+    needs: build_64
+    runs-on: ubuntu-22.04
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - uses: actions/download-artifact@v4
+      with:
+        name: mtxrpicam_64
+        path: mtxrpicam_64
+
+    - run: chmod +x ./mtxrpicam_64/exe
+
+    - run: make -f utils.mk test_bookworm_64

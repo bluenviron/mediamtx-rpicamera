@@ -35,9 +35,7 @@ static void on_encoder_output(uint64_t ts, const uint8_t *buf, uint64_t size) {
 }
 
 int main() {
-    // this is meant to test that dependencies have been loaded correctly
-    // therefore a simple "return 0" is enough.
-    if (strlen(getenv("TEST")) != 0) {
+    if (getenv("TEST") != NULL) {
         printf("test passed\n");
         return 0;
     }
@@ -53,7 +51,7 @@ int main() {
     free(buf);
     if (!ok) {
         pipe_write_error(pipe_video_fd, "parameters_unserialize(): %s", parameters_get_error());
-        return 5;
+        return -1;
     }
 
     pthread_mutex_init(&pipe_video_mutex, NULL);
@@ -66,13 +64,13 @@ int main() {
         &cam);
     if (!ok) {
         pipe_write_error(pipe_video_fd, "camera_create(): %s", camera_get_error());
-        return 5;
+        return -1;
     }
 
     ok = text_create(&params, &text);
     if (!ok) {
         pipe_write_error(pipe_video_fd, "text_create(): %s", text_get_error());
-        return 5;
+        return -1;
     }
 
     ok = encoder_create(
@@ -83,13 +81,13 @@ int main() {
         &enc);
     if (!ok) {
         pipe_write_error(pipe_video_fd, "encoder_create(): %s", encoder_get_error());
-        return 5;
+        return -1;
     }
 
     ok = camera_start(cam);
     if (!ok) {
         pipe_write_error(pipe_video_fd, "camera_start(): %s", camera_get_error());
-        return 5;
+        return -1;
     }
 
     pipe_write_ready(pipe_video_fd);

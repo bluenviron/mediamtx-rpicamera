@@ -15,6 +15,7 @@
 #include <libcamera/controls.h>
 #include <libcamera/framebuffer_allocator.h>
 #include <libcamera/property_ids.h>
+#include <libcamera/transform.h>
 #include <linux/videodev2.h>
 
 #include "camera.h"
@@ -26,6 +27,7 @@ using libcamera::ColorSpace;
 using libcamera::ControlList;
 using libcamera::FrameBufferAllocator;
 using libcamera::FrameBuffer;
+using libcamera::Orientation;
 using libcamera::PixelFormat;
 using libcamera::Rectangle;
 using libcamera::Request;
@@ -143,6 +145,11 @@ bool camera_create(const parameters_t *params, camera_frame_cb frame_cb, camera_
     // We make sure to set the environment variable before libcamera init
     setenv("LIBCAMERA_RPI_TUNING_FILE", params->tuning_file, 1);
 
+    // TODO: move into embedded libcamera
+    setenv("LIBCAMERA_IPA_CONFIG_PATH", "./ipa_conf", 1);
+    setenv("LIBCAMERA_IPA_MODULE_PATH", "./ipa_module", 1);
+    setenv("LIBCAMERA_IPA_PROXY_PATH", "/dev/null", 1);
+
     camp->camera_manager = std::make_unique<CameraManager>();
     int ret = camp->camera_manager->start();
     if (ret != 0) {
@@ -199,12 +206,12 @@ bool camera_create(const parameters_t *params, camera_frame_cb frame_cb, camera_
         raw_stream_conf.bufferCount = video_stream_conf.bufferCount;
     }
 
-    conf->transform = Transform::Identity;
+    conf->orientation = Orientation::Rotate0;
     if (params->h_flip) {
-        conf->transform = Transform::HFlip * conf->transform;
+        conf->orientation = conf->orientation * Transform::HFlip;
     }
     if (params->v_flip) {
-        conf->transform = Transform::VFlip * conf->transform;
+        conf->orientation = conf->orientation * Transform::VFlip;
     }
 
     CameraConfiguration::Status vstatus = conf->validate();

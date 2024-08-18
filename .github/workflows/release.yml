@@ -12,12 +12,14 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - run: make -f utils.mk build32
+    - run: make -f utils.mk build_32
+
+    - run: tar -czf mtxrpicam_32.tar.gz mtxrpicam_32
 
     - uses: actions/upload-artifact@v4
       with:
-        path: mtxrpicam_32
-        name: mtxrpicam_32
+        path: mtxrpicam_32.tar.gz
+        name: mtxrpicam_32.tar.gz
 
   build_64:
     runs-on: ubuntu-22.04
@@ -25,12 +27,14 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - run: make -f utils.mk build64
+    - run: make -f utils.mk build_64
+
+    - run: tar -czf mtxrpicam_64.tar.gz mtxrpicam_64
 
     - uses: actions/upload-artifact@v4
       with:
-        path: mtxrpicam_64
-        name: mtxrpicam_64
+        path: mtxrpicam_64.tar.gz
+        name: mtxrpicam_64.tar.gz
 
   github_release:
     needs:
@@ -41,12 +45,12 @@ jobs:
     steps:
     - uses: actions/download-artifact@v4
       with:
-        name: mtxrpicam_32
+        name: mtxrpicam_32.tar.gz
         path: binaries/
 
     - uses: actions/download-artifact@v4
       with:
-        name: mtxrpicam_64
+        name: mtxrpicam_64.tar.gz
         path: binaries/
 
     - uses: actions/github-script@v6
