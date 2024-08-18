@@ -15,10 +15,12 @@ jobs:
 
     - run: make -f utils.mk build_32
 
+    - run: tar -czf mtxrpicam_32.tar.gz mtxrpicam_32
+
     - uses: actions/upload-artifact@v4
       with:
-        path: mtxrpicam_32
-        name: mtxrpicam_32
+        path: mtxrpicam_32.tar.gz
+        name: mtxrpicam_32.tar.gz
 
   build_64:
     runs-on: ubuntu-22.04
@@ -28,10 +30,12 @@ jobs:
 
     - run: make -f utils.mk build_64
 
+    - run: tar -czf mtxrpicam_64.tar.gz mtxrpicam_64
+
     - uses: actions/upload-artifact@v4
       with:
-        path: mtxrpicam_64
-        name: mtxrpicam_64
+        path: mtxrpicam_64.tar.gz
+        name: mtxrpicam_64.tar.gz
 
   test_bullseye_32:
     needs: build_32
@@ -42,10 +46,10 @@ jobs:
 
     - uses: actions/download-artifact@v4
       with:
-        name: mtxrpicam_32
-        path: mtxrpicam_32
+        name: mtxrpicam_32.tar.gz
+        path: .
 
-    - run: chmod +x ./mtxrpicam_32/exe
+    - run: tar xvf mtxrpicam_32.tar.gz
 
     - run: make -f utils.mk test_bullseye_32
 
@@ -58,10 +62,10 @@ jobs:
 
     - uses: actions/download-artifact@v4
       with:
-        name: mtxrpicam_64
-        path: mtxrpicam_64
+        name: mtxrpicam_64.tar.gz
+        path: .
 
-    - run: chmod +x ./mtxrpicam_64/exe
+    - run: tar xvf mtxrpicam_64.tar.gz
 
     - run: make -f utils.mk test_bullseye_64
 
@@ -74,10 +78,10 @@ jobs:
 
     - uses: actions/download-artifact@v4
       with:
-        name: mtxrpicam_32
-        path: mtxrpicam_32
+        name: mtxrpicam_32.tar.gz
+        path: .
 
-    - run: chmod +x ./mtxrpicam_32/exe
+    - run: tar xvf mtxrpicam_32.tar.gz
 
     - run: make -f utils.mk test_bookworm_32
 
@@ -90,9 +94,9 @@ jobs:
 
     - uses: actions/download-artifact@v4
       with:
-        name: mtxrpicam_64
-        path: mtxrpicam_64
+        name: mtxrpicam_64.tar.gz
+        path: .
 
-    - run: chmod +x ./mtxrpicam_64/exe
+    - run: tar xvf mtxrpicam_64.tar.gz
 
     - run: make -f utils.mk test_bookworm_64
