@@ -145,11 +145,6 @@ bool camera_create(const parameters_t *params, camera_frame_cb frame_cb, camera_
     // We make sure to set the environment variable before libcamera init
     setenv("LIBCAMERA_RPI_TUNING_FILE", params->tuning_file, 1);
 
-    // TODO: move into embedded libcamera
-    setenv("LIBCAMERA_IPA_CONFIG_PATH", "./ipa_conf", 1);
-    setenv("LIBCAMERA_IPA_MODULE_PATH", "./ipa_module", 1);
-    setenv("LIBCAMERA_IPA_PROXY_PATH", "/dev/null", 1);
-
     camp->camera_manager = std::make_unique<CameraManager>();
     int ret = camp->camera_manager->start();
     if (ret != 0) {
