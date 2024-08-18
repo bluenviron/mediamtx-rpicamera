@@ -328,6 +328,13 @@ static void fill_dynamic_controls(ControlList *ctrls, const parameters_t *params
     }
     ctrls->set(controls::AeExposureMode, exposure_mode);
 
+    if (params->flicker_period != 0) {
+        ctrls->set(controls::AeFlickerMode, controls::FlickerManual);
+        ctrls->set(controls::AeFlickerPeriod, params->flicker_period);
+    } else {
+        ctrls->set(controls::AeFlickerMode, controls::FlickerAuto);
+    }
+
     int awb_mode;
     if (strcmp(params->awb, "incandescent") == 0) {
         awb_mode = controls::AwbIncandescent;
