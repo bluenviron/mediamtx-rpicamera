@@ -332,7 +332,7 @@ static void fill_dynamic_controls(ControlList *ctrls, const parameters_t *params
         ctrls->set(controls::AeFlickerMode, controls::FlickerManual);
         ctrls->set(controls::AeFlickerPeriod, params->flicker_period);
     } else {
-        ctrls->set(controls::AeFlickerMode, controls::FlickerAuto);
+        ctrls->set(controls::AeFlickerMode, controls::FlickerOff);
     }
 
     int awb_mode;
