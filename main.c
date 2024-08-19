@@ -25,7 +25,7 @@ static void on_frame(
     uint64_t size,
     uint64_t timestamp) {
     text_draw(text, mapped_buffer, stride, height);
-    encoder_encode(enc, buffer_fd, size, timestamp);
+    encoder_encode(enc, mapped_buffer, buffer_fd, size, timestamp);
 }
 
 static void on_encoder_output(uint64_t ts, const uint8_t *buf, uint64_t size) {
@@ -110,6 +110,7 @@ int main() {
                     printf("skipping reloading parameters since they are invalid: %s\n", parameters_get_error());
                     continue;
                 }
+
                 camera_reload_params(cam, &params);
                 encoder_reload_params(enc, &params);
                 parameters_destroy(&params);
