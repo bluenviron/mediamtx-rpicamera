@@ -89,7 +89,7 @@ struct CameraPriv {
     uint64_t ts_start;
 };
 
-static int get_hard_h2642_colorspace(std::optional<ColorSpace> const &cs) {
+static int get_v4l2_colorspace(std::optional<ColorSpace> const &cs) {
     if (cs == ColorSpace::Rec709) {
         return V4L2_COLORSPACE_REC709;
     }
@@ -317,7 +317,7 @@ int camera_get_mode_stride(camera_t *cam) {
 
 int camera_get_mode_colorspace(camera_t *cam) {
     CameraPriv *camp = (CameraPriv *)cam;
-    return get_hard_h2642_colorspace(camp->video_stream->configuration().colorSpace);
+    return get_v4l2_colorspace(camp->video_stream->configuration().colorSpace);
 }
 
 static void fill_dynamic_controls(ControlList *ctrls, const parameters_t *params) {

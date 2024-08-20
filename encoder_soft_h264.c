@@ -102,7 +102,7 @@ failed:
     return false;
 }
 
-void encoder_soft_h264_encode(encoder_soft_h264_t *enc, uint8_t *mapped_buffer, int buffer_fd, size_t size, int64_t timestamp_us) {
+void encoder_soft_h264_encode(encoder_soft_h264_t *enc, uint8_t *mapped_buffer, int buffer_fd, size_t size, uint64_t ts) {
     encoder_soft_h264_priv_t *encp = (encoder_soft_h264_priv_t *)enc;
 
     encp->x_pic_in.img.plane[0] = mapped_buffer; // Y
@@ -118,7 +118,7 @@ void encoder_soft_h264_encode(encoder_soft_h264_t *enc, uint8_t *mapped_buffer, 
 
     pthread_mutex_unlock(&encp->mutex);
 
-    encp->output_cb(timestamp_us, nal->p_payload, frame_size);
+    encp->output_cb(ts, nal->p_payload, frame_size);
 }
 
 void encoder_soft_h264_reload_params(encoder_soft_h264_t *enc, const parameters_t *params) {

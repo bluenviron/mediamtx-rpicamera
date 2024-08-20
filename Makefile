@@ -4,8 +4,6 @@ else
   OUT_DIR = mtxrpicam_32
 endif
 
-PREFIX = $(PWD)/prefix
-
 all: \
 	$(OUT_DIR)/exe \
 	$(OUT_DIR)/ipa_conf \
@@ -27,7 +25,7 @@ deps/openssl:
 $(OPENSSL_TARGET): deps/openssl
 	cd $< \
 	&& ./Configure \
-	--prefix=$(PREFIX) \
+	--prefix=$(PWD)/prefix \
 	no-shared \
 	no-threads \
 	no-quic \
@@ -51,9 +49,9 @@ $(LIBCAMERA_TARGET): deps/libcamera $(OPENSSL_TARGET)
 	cd $< \
 	&& echo "0.3.0+mediamtx" > .tarball-version \
 	&& patch -p1 < ../../libcamera.patch \
-	&& PKG_CONFIG_PATH=$(PREFIX)/lib/pkgconfig \
+	&& PKG_CONFIG_PATH=$(PWD)/prefix/lib/pkgconfig \
 	meson setup build \
-	--prefix=$(PREFIX) \
+	--prefix=$(PWD)/prefix \
 	--buildtype=release \
 	-Dwrap_mode=forcefallback \
 	-Dlc-compliance=disabled \
@@ -70,19 +68,19 @@ $(LIBCAMERA_TARGET): deps/libcamera $(OPENSSL_TARGET)
 
 $(OUT_DIR)/ipa_conf: $(LIBCAMERA_TARGET)
 	mkdir -p $(OUT_DIR)
-	cp -r $(PREFIX)/share/libcamera/ipa $@
+	cp -r $(PWD)/prefix/share/libcamera/ipa $@
 
 $(OUT_DIR)/ipa_module: $(LIBCAMERA_TARGET)
 	mkdir -p $(OUT_DIR)
-	cp -r $(PREFIX)/lib/libcamera $@
+	cp -r $(PWD)/prefix/lib/libcamera $@
 
 $(OUT_DIR)/libcamera.so.9.9: $(LIBCAMERA_TARGET)
 	mkdir -p $(OUT_DIR)
-	cp $(PREFIX)/lib/libcamera.so.9.9 $@
+	cp $(PWD)/prefix/lib/libcamera.so.9.9 $@
 
 $(OUT_DIR)/libcamera-base.so.9.9: $(LIBCAMERA_TARGET)
 	mkdir -p $(OUT_DIR)
-	cp $(PREFIX)/lib/libcamera-base.so.9.9 $@
+	cp $(PWD)/prefix/lib/libcamera-base.so.9.9 $@
 
 #################################################
 # libfreetype
@@ -98,7 +96,7 @@ deps/freetype:
 $(FREETYPE_TARGET): deps/freetype
 	cd $< \
 	&& cmake -B build \
-	-DCMAKE_INSTALL_PREFIX:PATH=$(PREFIX) \
+	-DCMAKE_INSTALL_PREFIX:PATH=$(PWD)/prefix \
 	-D CMAKE_BUILD_TYPE=Release \
 	-D BUILD_SHARED_LIBS=false \
 	-D FT_DISABLE_ZLIB=TRUE \
@@ -124,11 +122,11 @@ deps/x264:
 $(X264_TARGET): deps/x264
 	cd $< \
 	&& ./configure \
-    --prefix=$(PREFIX) \
-    --enable-static \
-    --enable-strip \
-    --disable-cli \
-    && make -j$(nproc) \
+	--prefix=$(PWD)/prefix \
+	--enable-static \
+	--enable-strip \
+	--disable-cli \
+	&& make -j$(nproc) \
 	&& make install
 
 #################################################
@@ -158,8 +156,8 @@ CFLAGS = \
 	-Wextra \
 	-Wno-unused-parameter \
 	-Wno-unused-result \
-	$$(PKG_CONFIG_PATH=$(PREFIX)/lib/pkgconfig pkg-config --cflags freetype2) \
-	$$(PKG_CONFIG_PATH=$(PREFIX)/lib/pkgconfig pkg-config --cflags x264)
+	$$(PKG_CONFIG_PATH=$(PWD)/prefix/lib/pkgconfig pkg-config --cflags freetype2) \
+	$$(PKG_CONFIG_PATH=$(PWD)/prefix/lib/pkgconfig pkg-config --cflags x264)
 
 CXXFLAGS = \
 	-Ofast \
@@ -169,14 +167,14 @@ CXXFLAGS = \
 	-Wno-unused-parameter \
 	-Wno-unused-result \
 	-std=c++17 \
-	$$(PKG_CONFIG_PATH=$(PREFIX)/lib/pkgconfig pkg-config --cflags libcamera)
+	$$(PKG_CONFIG_PATH=$(PWD)/prefix/lib/pkgconfig pkg-config --cflags libcamera)
 
 LDFLAGS = \
 	-s \
 	-pthread \
-	$$(PKG_CONFIG_PATH=$(PREFIX)/lib/pkgconfig pkg-config --libs libcamera) \
-	$$(PKG_CONFIG_PATH=$(PREFIX)/lib/pkgconfig pkg-config --libs freetype2) \
-	$$(PKG_CONFIG_PATH=$(PREFIX)/lib/pkgconfig pkg-config --libs x264)
+	$$(PKG_CONFIG_PATH=$(PWD)/prefix/lib/pkgconfig pkg-config --libs libcamera) \
+	$$(PKG_CONFIG_PATH=$(PWD)/prefix/lib/pkgconfig pkg-config --libs freetype2) \
+	$$(PKG_CONFIG_PATH=$(PWD)/prefix/lib/pkgconfig pkg-config --libs x264)
 
 OBJS = \
 	base64.o \

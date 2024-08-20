@@ -292,7 +292,7 @@ failed:
     return false;
 }
 
-void encoder_hard_h264_encode(encoder_hard_h264_t *enc, uint8_t *mapped_buffer, int buffer_fd, size_t size, int64_t timestamp_us) {
+void encoder_hard_h264_encode(encoder_hard_h264_t *enc, uint8_t *mapped_buffer, int buffer_fd, size_t size, uint64_t ts) {
     encoder_hard_h264_priv_t *encp = (encoder_hard_h264_priv_t *)enc;
 
     int index = encp->cur_buffer++;
@@ -305,8 +305,8 @@ void encoder_hard_h264_encode(encoder_hard_h264_t *enc, uint8_t *mapped_buffer, 
     buf.field = V4L2_FIELD_NONE;
     buf.memory = V4L2_MEMORY_DMABUF;
     buf.length = 1;
-    buf.timestamp.tv_sec = timestamp_us / 1000000;
-    buf.timestamp.tv_usec = timestamp_us % 1000000;
+    buf.timestamp.tv_sec = ts / 1000000;
+    buf.timestamp.tv_usec = ts % 1000000;
     buf.m.planes = planes;
     buf.m.planes[0].m.fd = buffer_fd;
     buf.m.planes[0].bytesused = size;

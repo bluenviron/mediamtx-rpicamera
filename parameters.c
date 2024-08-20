@@ -105,30 +105,6 @@ bool parameters_unserialize(parameters_t *params, const uint8_t *buf, size_t buf
             free(decoded_val);
         } else if (strcmp(key, "FPS") == 0) {
             params->fps = atof(val);
-        } else if (strcmp(key, "IDRPeriod") == 0) {
-            params->idr_period = atoi(val);
-        } else if (strcmp(key, "Bitrate") == 0) {
-            params->bitrate = atoi(val);
-        } else if (strcmp(key, "Profile") == 0) {
-            char *decoded_val = base64_decode(val);
-            if (strcmp(decoded_val, "baseline") == 0) {
-                params->profile = V4L2_MPEG_VIDEO_H264_PROFILE_BASELINE;
-            } else if (strcmp(decoded_val, "main") == 0) {
-                params->profile = V4L2_MPEG_VIDEO_H264_PROFILE_MAIN;
-            } else {
-                params->profile = V4L2_MPEG_VIDEO_H264_PROFILE_HIGH;
-            }
-            free(decoded_val);
-        } else if (strcmp(key, "Level") == 0) {
-            char *decoded_val = base64_decode(val);
-            if (strcmp(decoded_val, "4.0") == 0) {
-                params->level = V4L2_MPEG_VIDEO_H264_LEVEL_4_0;
-            } else if (strcmp(decoded_val, "4.1") == 0) {
-                params->level = V4L2_MPEG_VIDEO_H264_LEVEL_4_1;
-            } else {
-                params->level = V4L2_MPEG_VIDEO_H264_LEVEL_4_2;
-            }
-            free(decoded_val);
         } else if (strcmp(key, "AfMode") == 0) {
             params->af_mode = base64_decode(val);
         } else if (strcmp(key, "AfRange") == 0) {
@@ -155,6 +131,32 @@ bool parameters_unserialize(parameters_t *params, const uint8_t *buf, size_t buf
             params->text_overlay_enable = (strcmp(val, "1") == 0);
         } else if (strcmp(key, "TextOverlay") == 0) {
             params->text_overlay = base64_decode(val);
+        } else if (strcmp(key, "Codec") == 0) {
+            params->codec = base64_decode(val);
+        } else if (strcmp(key, "IDRPeriod") == 0) {
+            params->idr_period = atoi(val);
+        } else if (strcmp(key, "Bitrate") == 0) {
+            params->bitrate = atoi(val);
+        } else if (strcmp(key, "Profile") == 0) {
+            char *decoded_val = base64_decode(val);
+            if (strcmp(decoded_val, "baseline") == 0) {
+                params->profile = V4L2_MPEG_VIDEO_H264_PROFILE_BASELINE;
+            } else if (strcmp(decoded_val, "main") == 0) {
+                params->profile = V4L2_MPEG_VIDEO_H264_PROFILE_MAIN;
+            } else {
+                params->profile = V4L2_MPEG_VIDEO_H264_PROFILE_HIGH;
+            }
+            free(decoded_val);
+        } else if (strcmp(key, "Level") == 0) {
+            char *decoded_val = base64_decode(val);
+            if (strcmp(decoded_val, "4.0") == 0) {
+                params->level = V4L2_MPEG_VIDEO_H264_LEVEL_4_0;
+            } else if (strcmp(decoded_val, "4.1") == 0) {
+                params->level = V4L2_MPEG_VIDEO_H264_LEVEL_4_1;
+            } else {
+                params->level = V4L2_MPEG_VIDEO_H264_LEVEL_4_2;
+            }
+            free(decoded_val);
         }
     }
 
@@ -208,5 +210,8 @@ void parameters_destroy(parameters_t *params) {
     }
     if (params->text_overlay != NULL) {
         free(params->text_overlay);
+    }
+    if (params->codec != NULL) {
+        free(params->codec);
     }
 }

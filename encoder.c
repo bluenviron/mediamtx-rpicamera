@@ -2,10 +2,17 @@
 #include <string.h>
 #include <stdarg.h>
 #include <stdio.h>
+#include <fcntl.h>
+#include <sys/ioctl.h>
+#include <unistd.h>
+
+#include <linux/videodev2.h>
 
 #include "encoder_hard_h264.h"
 #include "encoder_soft_h264.h"
 #include "encoder.h"
+
+#define HARDWARE_DEVICE "/dev/video11"
 
 static char errbuf[256];
 
@@ -19,7 +26,7 @@ const char *encoder_get_error() {
     return errbuf;
 }
 
-typedef void (*encode_cb)(void *enc, uint8_t *mapped_buffer, int buffer_fd, size_t size, int64_t timestamp_us);
+typedef void (*encode_cb)(void *enc, uint8_t *mapped_buffer, int buffer_fd, size_t size, uint64_t ts);
 
 typedef void (*reload_params_cb)(void *enc, const parameters_t *params);
 
@@ -29,12 +36,46 @@ typedef struct {
     reload_params_cb reload_params;
 } encoder_priv_t;
 
+static bool supports_hardware_h264() {
+    int fd = open(HARDWARE_DEVICE, O_RDWR, 0);
+    if (fd < 0) {
+        return false;
+    }
+
+    struct v4l2_capability caps = {0};
+    int res = ioctl(fd, VIDIOC_QUERYCAP, &caps);
+    if (res != 0) {
+        close(fd);
+        return false;
+    }
+
+    close(fd);
+
+    if (strncmp("bcm2835-codec", (char *)caps.card, strlen("bcm2835-codec")) == 0) {
+        return true;
+    }
+
+    return false;
+}
+
 bool encoder_create(const parameters_t *params, int stride, int colorspace, encoder_output_cb output_cb, encoder_t **enc) {
     *enc = malloc(sizeof(encoder_priv_t));
     encoder_priv_t *encp = (encoder_priv_t *)(*enc);
     memset(encp, 0, sizeof(encoder_priv_t));
 
-    if (false) {
+    bool hardH264;
+
+    if (strcmp(params->codec, "hardwareH264") == 0) {
+        hardH264 = true;
+    } else if (strcmp(params->codec, "softwareH264") == 0) {
+        hardH264 = false;
+    } else { // auto
+        hardH264 = supports_hardware_h264();
+    }
+
+    if (hardH264) {
+        printf("using hardware H264 encoder\n");
+
         encoder_hard_h264_t *hard_h264;
         bool res = encoder_hard_h264_create(params, stride, colorspace, output_cb, &hard_h264);
         if (!res) {
@@ -46,6 +87,8 @@ bool encoder_create(const parameters_t *params, int stride, int colorspace, enco
         encp->encode = encoder_hard_h264_encode;
         encp->reload_params = encoder_hard_h264_reload_params;
     } else {
+        printf("using software H264 encoder\n");
+
         encoder_soft_h264_t *soft_h264;
         bool res = encoder_soft_h264_create(params, stride, colorspace, output_cb, &soft_h264);
         if (!res) {
@@ -65,9 +108,9 @@ failed:
     return false;
 }
 
-void encoder_encode(encoder_t *enc, uint8_t *mapped_buffer, int buffer_fd, size_t size, int64_t timestamp_us) {
+void encoder_encode(encoder_t *enc, uint8_t *mapped_buffer, int buffer_fd, size_t size, uint64_t ts) {
     encoder_priv_t *encp = (encoder_priv_t *)enc;
-    encp->encode(encp->implementation, mapped_buffer, buffer_fd, size, timestamp_us);
+    encp->encode(encp->implementation, mapped_buffer, buffer_fd, size, ts);
 }
 
 void encoder_reload_params(encoder_t *enc, const parameters_t *params) {
