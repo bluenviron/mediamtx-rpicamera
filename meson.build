@@ -39,8 +39,9 @@ x264 = subproject(
         'default_library=static',
         'cli=false',
         'strip=true',
+        'interlaced=false',
         'bit-depth=8',
-        'chroma-format=420'
+        'chroma-format=all'
     ])
 x264_dep = x264.get_variable('libx264_dep')
 
