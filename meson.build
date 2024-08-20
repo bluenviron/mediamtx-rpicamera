@@ -7,7 +7,7 @@ project(
         # 'c_std=c18',
         'cpp_std=c++17',
         'buildtype=release',
-        # 'strip=true',
+        'strip=true',
         'prefix=/'
     ]
 )
@@ -39,6 +39,7 @@ x264 = subproject(
         'default_library=static',
         'cli=false',
         'strip=true',
+        'bit-depth=8',
         'chroma-format=420'
     ])
 x264_dep = x264.get_variable('libx264_dep')
@@ -47,6 +48,7 @@ libcamera = subproject(
     'libcamera',
     default_options : [
         'buildtype=release',
+        'strip=true',
         'wrap_mode=forcefallback',
         'lc-compliance=disabled',
         'ipas=rpi/vc4',
