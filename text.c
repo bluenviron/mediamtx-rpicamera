@@ -1,6 +1,3 @@
-#define _DEFAULT_SOURCE
-#include <string.h>
-#include <sys/time.h>
 #include <time.h>
 
 #include <ft2build.h>

@@ -67,15 +67,11 @@ int main() {
         return -1;
     }
 
-    printf("A\n");
-
     ok = text_create(&params, &text);
     if (!ok) {
         pipe_write_error(pipe_video_fd, "text_create(): %s", text_get_error());
         return -1;
     }
-
-    printf("B\n");
 
     ok = encoder_create(
         &params,

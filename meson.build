@@ -4,10 +4,10 @@ project(
     version : '1.0.0',
     meson_version : '>=1.0.0',
     default_options: [
-        'c_std=c18',
+        # 'c_std=c18',
         'cpp_std=c++17',
         'buildtype=release',
-        'strip=true',
+        # 'strip=true',
         'prefix=/'
     ]
 )
@@ -47,7 +47,6 @@ libcamera = subproject(
     'libcamera',
     default_options : [
         'buildtype=release',
-        'strip=false',
         'wrap_mode=forcefallback',
         'lc-compliance=disabled',
         'ipas=rpi/vc4',
