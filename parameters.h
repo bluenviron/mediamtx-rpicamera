@@ -32,10 +32,6 @@ typedef struct {
     char *tuning_file;
     sensor_mode_t *mode;
     float fps;
-    unsigned int idr_period;
-    unsigned int bitrate;
-    unsigned int profile;
-    unsigned int level;
     char *af_mode;
     char *af_range;
     char *af_speed;
@@ -44,6 +40,11 @@ typedef struct {
     unsigned int flicker_period;
     bool text_overlay_enable;
     char *text_overlay;
+    char *codec;
+    unsigned int idr_period;
+    unsigned int bitrate;
+    unsigned int profile;
+    unsigned int level;
 
     // private
     unsigned int buffer_count;

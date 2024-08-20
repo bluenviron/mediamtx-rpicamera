@@ -85,6 +85,8 @@ struct CameraPriv {
     std::mutex ctrls_mutex;
     std::unique_ptr<ControlList> ctrls;
     std::map<FrameBuffer *, uint8_t *> mapped_buffers;
+    bool ts_initialized;
+    uint64_t ts_start;
 };
 
 static int get_v4l2_colorspace(std::optional<ColorSpace> const &cs) {
@@ -281,13 +283,21 @@ static void on_request_complete(Request *request) {
 
     FrameBuffer *buffer = request->buffers().at(camp->video_stream);
 
+    uint64_t ts = buffer->metadata().timestamp / 1000;
+
+    if (!camp->ts_initialized) {
+        camp->ts_initialized = true;
+        camp->ts_start = ts;
+    }
+    ts -= camp->ts_start;
+
     camp->frame_cb(
         camp->mapped_buffers.at(buffer),
         camp->video_stream->configuration().stride,
         camp->video_stream->configuration().size.height,
         buffer->planes()[0].fd.get(),
         buffer_size(buffer->planes()),
-        buffer->metadata().timestamp / 1000);
+        ts);
 
     request->reuse(Request::ReuseFlag::ReuseBuffers);
 
