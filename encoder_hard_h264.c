@@ -14,7 +14,7 @@
 
 #include <linux/videodev2.h>
 
-#include "encoder_v4l.h"
+#include "encoder_hard_h264.h"
 
 #define DEVICE              "/dev/video11"
 #define POLL_TIMEOUT_MS     200
@@ -27,7 +27,7 @@ static void set_error(const char *format, ...) {
     vsnprintf(errbuf, 256, format, args);
 }
 
-const char *encoder_v4l_get_error() {
+const char *encoder_hard_h264_get_error() {
     return errbuf;
 }
 
@@ -36,14 +36,12 @@ typedef struct {
     int fd;
     void **capture_buffers;
     int cur_buffer;
-    encoder_v4l_output_cb output_cb;
+    encoder_hard_h264_output_cb output_cb;
     pthread_t output_thread;
-    bool ts_initialized;
-    uint64_t ts_start;
-} encoder_v4l_priv_t;
+} encoder_hard_h264_priv_t;
 
 static void *output_thread(void *userdata) {
-    encoder_v4l_priv_t *encp = (encoder_v4l_priv_t *)userdata;
+    encoder_hard_h264_priv_t *encp = (encoder_hard_h264_priv_t *)userdata;
 
     while (true) {
         struct pollfd p = { encp->fd, POLLIN, 0 };
@@ -75,12 +73,6 @@ static void *output_thread(void *userdata) {
             res = ioctl(encp->fd, VIDIOC_DQBUF, &buf);
             if (res == 0) {
                 uint64_t ts = ((uint64_t)buf.timestamp.tv_sec * (uint64_t)1000000) + (uint64_t)buf.timestamp.tv_usec;
-
-                if (!encp->ts_initialized) {
-                    encp->ts_initialized = true;
-                    encp->ts_start = ts;
-                }
-                ts -= encp->ts_start;
 
                 const uint8_t *bufmem = (const uint8_t *)encp->capture_buffers[buf.index];
                 int bufsize = buf.m.planes[0].bytesused;
@@ -131,10 +123,10 @@ static bool fill_dynamic_params(int fd, const parameters_t *params) {
     return true;
 }
 
-bool encoder_v4l_create(const parameters_t *params, int stride, int colorspace, encoder_v4l_output_cb output_cb, encoder_v4l_t **enc) {
-    *enc = malloc(sizeof(encoder_v4l_priv_t));
-    encoder_v4l_priv_t *encp = (encoder_v4l_priv_t *)(*enc);
-    memset(encp, 0, sizeof(encoder_v4l_priv_t));
+bool encoder_hard_h264_create(const parameters_t *params, int stride, int colorspace, encoder_hard_h264_output_cb output_cb, encoder_hard_h264_t **enc) {
+    *enc = malloc(sizeof(encoder_hard_h264_priv_t));
+    encoder_hard_h264_priv_t *encp = (encoder_hard_h264_priv_t *)(*enc);
+    memset(encp, 0, sizeof(encoder_hard_h264_priv_t));
 
     encp->fd = open(DEVICE, O_RDWR, 0);
     if (encp->fd < 0) {
@@ -284,7 +276,6 @@ bool encoder_v4l_create(const parameters_t *params, int stride, int colorspace, 
     encp->params = params;
     encp->cur_buffer = 0;
     encp->output_cb = output_cb;
-    encp->ts_initialized = false;
 
     pthread_create(&encp->output_thread, NULL, output_thread, encp);
 
@@ -301,8 +292,8 @@ failed:
     return false;
 }
 
-void encoder_v4l_encode(encoder_v4l_t *enc, uint8_t *mapped_buffer, int buffer_fd, size_t size, int64_t timestamp_us) {
-    encoder_v4l_priv_t *encp = (encoder_v4l_priv_t *)enc;
+void encoder_hard_h264_encode(encoder_hard_h264_t *enc, uint8_t *mapped_buffer, int buffer_fd, size_t size, int64_t timestamp_us) {
+    encoder_hard_h264_priv_t *encp = (encoder_hard_h264_priv_t *)enc;
 
     int index = encp->cur_buffer++;
     encp->cur_buffer %= encp->params->buffer_count;
@@ -322,12 +313,12 @@ void encoder_v4l_encode(encoder_v4l_t *enc, uint8_t *mapped_buffer, int buffer_f
     buf.m.planes[0].length = size;
     int res = ioctl(encp->fd, VIDIOC_QBUF, &buf);
     if (res != 0) {
-        fprintf(stderr, "encoder_v4l_encode(): ioctl(VIDIOC_QBUF) failed\n");
+        fprintf(stderr, "encoder_hard_h264_encode(): ioctl(VIDIOC_QBUF) failed\n");
         // it happens when the raspberry is under pressure. do not exit.
     }
 }
 
-void encoder_v4l_reload_params(encoder_v4l_t *enc, const parameters_t *params) {
-     encoder_v4l_priv_t *encp = (encoder_v4l_priv_t *)enc;
+void encoder_hard_h264_reload_params(encoder_hard_h264_t *enc, const parameters_t *params) {
+     encoder_hard_h264_priv_t *encp = (encoder_hard_h264_priv_t *)enc;
      fill_dynamic_params(encp->fd, params);
 }

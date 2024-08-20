@@ -3,8 +3,8 @@
 #include <stdarg.h>
 #include <stdio.h>
 
-#include "encoder_v4l.h"
-#include "encoder_x264.h"
+#include "encoder_hard_h264.h"
+#include "encoder_soft_h264.h"
 #include "encoder.h"
 
 static char errbuf[256];
@@ -35,27 +35,27 @@ bool encoder_create(const parameters_t *params, int stride, int colorspace, enco
     memset(encp, 0, sizeof(encoder_priv_t));
 
     if (false) {
-        encoder_v4l_t *v4l;
-        bool res = encoder_v4l_create(params, stride, colorspace, output_cb, &v4l);
+        encoder_hard_h264_t *hard_h264;
+        bool res = encoder_hard_h264_create(params, stride, colorspace, output_cb, &hard_h264);
         if (!res) {
-            set_error(encoder_v4l_get_error());
+            set_error(encoder_hard_h264_get_error());
             goto failed;
         }
 
-        encp->implementation = v4l;
-        encp->encode = encoder_v4l_encode;
-        encp->reload_params = encoder_v4l_reload_params;
+        encp->implementation = hard_h264;
+        encp->encode = encoder_hard_h264_encode;
+        encp->reload_params = encoder_hard_h264_reload_params;
     } else {
-        encoder_x264_t *x264;
-        bool res = encoder_x264_create(params, stride, colorspace, output_cb, &x264);
+        encoder_soft_h264_t *soft_h264;
+        bool res = encoder_soft_h264_create(params, stride, colorspace, output_cb, &soft_h264);
         if (!res) {
-            set_error(encoder_x264_get_error());
+            set_error(encoder_soft_h264_get_error());
             goto failed;
         }
 
-        encp->implementation = x264;
-        encp->encode = encoder_x264_encode;
-        encp->reload_params = encoder_x264_reload_params;
+        encp->implementation = soft_h264;
+        encp->encode = encoder_soft_h264_encode;
+        encp->reload_params = encoder_soft_h264_reload_params;
     }
 
     return true;

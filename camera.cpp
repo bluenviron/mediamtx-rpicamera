@@ -85,9 +85,11 @@ struct CameraPriv {
     std::mutex ctrls_mutex;
     std::unique_ptr<ControlList> ctrls;
     std::map<FrameBuffer *, uint8_t *> mapped_buffers;
+    bool ts_initialized;
+    uint64_t ts_start;
 };
 
-static int get_v4l2_colorspace(std::optional<ColorSpace> const &cs) {
+static int get_hard_h2642_colorspace(std::optional<ColorSpace> const &cs) {
     if (cs == ColorSpace::Rec709) {
         return V4L2_COLORSPACE_REC709;
     }
@@ -281,13 +283,21 @@ static void on_request_complete(Request *request) {
 
     FrameBuffer *buffer = request->buffers().at(camp->video_stream);
 
+    uint64_t ts = buffer->metadata().timestamp / 1000;
+
+    if (!camp->ts_initialized) {
+        camp->ts_initialized = true;
+        camp->ts_start = ts;
+    }
+    ts -= camp->ts_start;
+
     camp->frame_cb(
         camp->mapped_buffers.at(buffer),
         camp->video_stream->configuration().stride,
         camp->video_stream->configuration().size.height,
         buffer->planes()[0].fd.get(),
         buffer_size(buffer->planes()),
-        buffer->metadata().timestamp / 1000);
+        ts);
 
     request->reuse(Request::ReuseFlag::ReuseBuffers);
 
@@ -307,7 +317,7 @@ int camera_get_mode_stride(camera_t *cam) {
 
 int camera_get_mode_colorspace(camera_t *cam) {
     CameraPriv *camp = (CameraPriv *)cam;
-    return get_v4l2_colorspace(camp->video_stream->configuration().colorSpace);
+    return get_hard_h2642_colorspace(camp->video_stream->configuration().colorSpace);
 }
 
 static void fill_dynamic_controls(ControlList *ctrls, const parameters_t *params) {

@@ -182,8 +182,8 @@ OBJS = \
 	base64.o \
 	camera.o \
 	encoder.o \
-	encoder_v4l.o \
-	encoder_x264.o \
+	encoder_hard_h264.o \
+	encoder_soft_h264.o \
 	main.o \
 	parameters.o \
 	pipe.o \
