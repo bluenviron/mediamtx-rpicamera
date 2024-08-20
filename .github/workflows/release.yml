@@ -14,11 +14,11 @@ jobs:
 
     - run: make -f utils.mk build_32
 
-    - run: tar -czf mtxrpicam_32.tar.gz mtxrpicam_32
+    - run: cd build && tar -czf mtxrpicam_32.tar.gz mtxrpicam_32
 
     - uses: actions/upload-artifact@v4
       with:
-        path: mtxrpicam_32.tar.gz
+        path: build/mtxrpicam_32.tar.gz
         name: mtxrpicam_32.tar.gz
 
   build_64:
@@ -29,11 +29,11 @@ jobs:
 
     - run: make -f utils.mk build_64
 
-    - run: tar -czf mtxrpicam_64.tar.gz mtxrpicam_64
+    - run: cd build && tar -czf mtxrpicam_64.tar.gz mtxrpicam_64
 
     - uses: actions/upload-artifact@v4
       with:
-        path: mtxrpicam_64.tar.gz
+        path: build/mtxrpicam_64.tar.gz
         name: mtxrpicam_64.tar.gz
 
   github_release:

@@ -28,26 +28,24 @@ FROM $(BULLSEYE_32_IMAGE) AS build
 COPY --from=qemu /usr/bin/qemu-arm-static /usr/bin/qemu-arm-static
 RUN apt update && apt install -y --no-install-recommends \
 	g++ \
-	make \
 	xxd \
 	wget \
 	git \
 	cmake \
 	meson \
-	patch \
 	pkg-config \
 	python3-jinja2 \
 	python3-yaml \
 	python3-ply
 WORKDIR /s
 COPY . .
-RUN make -j$$(nproc)
+RUN meson setup build && DESTDIR=./prefix ninja -C build install
 endef
 export DOCKERFILE_BUILD_32
 
 build_32: enable_multiarch
 	echo "$$DOCKERFILE_BUILD_32" | docker build . -f - -t build32
-	docker run --rm -v $(PWD):/o build32 sh -c "rm -rf /o/mtxrpicam_32 && mv /s/mtxrpicam_32 /o/"
+	docker run --rm -v $(PWD):/o build32 sh -c "rm -rf /o/build/mtxrpicam_32 && mv /s/build/mtxrpicam_32 /o/"
 
 define DOCKERFILE_BUILD_64
 FROM multiarch/qemu-user-static:x86_64-aarch64 AS qemu
@@ -68,13 +66,13 @@ RUN apt update && apt install -y --no-install-recommends \
 	python3-ply
 WORKDIR /s
 COPY . .
-RUN make -j$$(nproc)
+RUN meson setup build && DESTDIR=./prefix ninja -C build install
 endef
 export DOCKERFILE_BUILD_64
 
 build_64: enable_multiarch
 	echo "$$DOCKERFILE_BUILD_64" | docker build . -f - -t build64
-	docker run --rm -v $(PWD):/o build64 sh -c "rm -rf /o/mtxrpicam_64 && mv /s/mtxrpicam_64 /o/"
+	docker run --rm -v $(PWD):/o build64 sh -c "rm -rf /o/build/mtxrpicam_64 && mv /s/build/mtxrpicam_64 /o/"
 
 define DOCKERFILE_TEST_BULLSEYE_32
 FROM multiarch/qemu-user-static:x86_64-arm AS qemu

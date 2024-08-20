@@ -1,4 +1,6 @@
-*.o
-/deps
-/prefix
-/mtxrpicam_*
+/build
+/subprojects/*
+!/subprojects/packagefiles
+!/subprojects/freetype.wrap
+!/subprojects/libcamera.wrap
+!/subprojects/x264.wrap

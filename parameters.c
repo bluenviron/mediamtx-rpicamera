@@ -1,8 +1,10 @@
+#define _DEFAULT_SOURCE
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
 #include <stdarg.h>
 #include <stdio.h>
+#include <time.h>
 
 #include <linux/videodev2.h>
 

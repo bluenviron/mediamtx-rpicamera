@@ -1,9 +1,12 @@
+#define _DEFAULT_SOURCE
+#include <string.h>
+#include <sys/time.h>
 #include <time.h>
 
 #include <ft2build.h>
 #include FT_FREETYPE_H
 
-#include "deps/text_font.h"
+#include "text_font.h"
 
 #include "text.h"
 
@@ -43,8 +46,8 @@ bool text_create(const parameters_t *params, text_t **text) {
 
         error = FT_New_Memory_Face(
             textp->library,
-            deps_text_font_ttf,
-            sizeof(deps_text_font_ttf),
+            text_font_ttf,
+            sizeof(text_font_ttf),
             0,
             &textp->face);
         if (error) {
