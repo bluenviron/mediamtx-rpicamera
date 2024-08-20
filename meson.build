@@ -66,12 +66,12 @@ libcamera_dep = libcamera.get_variable('libcamera_public')
 cmake = import('cmake')
 freetype_vars = cmake.subproject_options()
 freetype_vars.add_cmake_defines({
-	'CMAKE_BUILD_TYPE': 'Release',
-	'BUILD_SHARED_LIBS': false,
-	'FT_DISABLE_ZLIB': true,
-	'FT_DISABLE_BZIP2': true,
-	'FT_DISABLE_PNG': true,
-	'FT_DISABLE_HARFBUZZ': true,
+    'CMAKE_BUILD_TYPE': 'Release',
+    'BUILD_SHARED_LIBS': false,
+    'FT_DISABLE_ZLIB': true,
+    'FT_DISABLE_BZIP2': true,
+    'FT_DISABLE_PNG': true,
+    'FT_DISABLE_HARFBUZZ': true,
     'FT_DISABLE_BROTLI': true
 })
 freetype = cmake.subproject('freetype', options : freetype_vars)
