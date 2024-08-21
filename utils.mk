@@ -45,7 +45,8 @@ export DOCKERFILE_BUILD_32
 
 build_32: enable_multiarch
 	echo "$$DOCKERFILE_BUILD_32" | docker build . -f - -t build32
-	docker run --rm -v $(PWD):/o build32 sh -c "mkdir -p /o/build && rm -rf /o/build/mtxrpicam_32 && mv /s/build/mtxrpicam_32 /o/build/"
+	mkdir -p build
+	docker run --rm -v $(PWD):/o build32 sh -c "rm -rf /o/build/mtxrpicam_32 && mv /s/build/mtxrpicam_32 /o/build/"
 
 define DOCKERFILE_BUILD_64
 FROM multiarch/qemu-user-static:x86_64-aarch64 AS qemu
@@ -72,7 +73,8 @@ export DOCKERFILE_BUILD_64
 
 build_64: enable_multiarch
 	echo "$$DOCKERFILE_BUILD_64" | docker build . -f - -t build64
-	docker run --rm -v $(PWD):/o build64 sh -c "mkdir -p /o/build && rm -rf /o/build/mtxrpicam_64 && mv /s/build/mtxrpicam_64 /o/build/"
+	mkdir -p build
+	docker run --rm -v $(PWD):/o build64 sh -c "rm -rf /o/build/mtxrpicam_64 && mv /s/build/mtxrpicam_64 /o/build/"
 
 define DOCKERFILE_TEST_BULLSEYE_32
 FROM multiarch/qemu-user-static:x86_64-arm AS qemu
