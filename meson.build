@@ -8,7 +8,8 @@ project(
         'cpp_std=c++17',
         'buildtype=release',
         'strip=true',
-        'prefix=/'
+        'prefix=/',
+        'wrap_mode=forcefallback'
     ]
 )
 
@@ -33,8 +34,9 @@ cpp_args = [
 add_project_arguments(c_args, language : 'c')
 add_project_arguments(cpp_args, language : 'cpp')
 
-x264 = subproject(
+x264_dep = dependency(
     'x264',
+    fallback : ['x264', 'libx264_dep'],
     default_options : [
         'default_library=static',
         'cli=false',
@@ -43,10 +45,10 @@ x264 = subproject(
         'bit-depth=8',
         'chroma-format=all'
     ])
-x264_dep = x264.get_variable('libx264_dep')
 
-libcamera = subproject(
+libcamera_dep = dependency(
     'libcamera',
+    fallback : ['libcamera', 'libcamera_public'],
     default_options : [
         'buildtype=release',
         'strip=true',
@@ -62,21 +64,24 @@ libcamera = subproject(
         'tracing=disabled',
         'udev=disabled'
     ])
-libcamera_dep = libcamera.get_variable('libcamera_public')
 
-cmake = import('cmake')
-freetype_vars = cmake.subproject_options()
-freetype_vars.add_cmake_defines({
-    'CMAKE_BUILD_TYPE': 'Release',
-    'BUILD_SHARED_LIBS': false,
-    'FT_DISABLE_ZLIB': true,
-    'FT_DISABLE_BZIP2': true,
-    'FT_DISABLE_PNG': true,
-    'FT_DISABLE_HARFBUZZ': true,
-    'FT_DISABLE_BROTLI': true
-})
-freetype = cmake.subproject('freetype', options : freetype_vars)
-freetype_dep = freetype.dependency('freetype')
+freetype_dep = dependency('freetype2', required : false)
+if not freetype_dep.found()
+    cmake = import('cmake')
+    freetype_vars = cmake.subproject_options()
+    freetype_vars.set_override_option('wrap_mode', 'none')
+    freetype_vars.add_cmake_defines({
+        'CMAKE_BUILD_TYPE': 'Release',
+        'BUILD_SHARED_LIBS': false,
+        'FT_DISABLE_ZLIB': true,
+        'FT_DISABLE_BZIP2': true,
+        'FT_DISABLE_PNG': true,
+        'FT_DISABLE_HARFBUZZ': true,
+        'FT_DISABLE_BROTLI': true
+    })
+    freetype_proj = cmake.subproject('freetype', options : freetype_vars)
+    freetype_dep = freetype_proj.dependency('freetype')
+endif
 
 dependencies = [
     x264_dep,
