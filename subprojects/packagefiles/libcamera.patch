@@ -1,0 +1,115 @@
+diff --git a/.tarball_version b/.tarball_version
+new file mode 100644
+index 00000000..d5df1ce3
+--- /dev/null
++++ b/.tarball_version
+@@ -0,0 +1 @@
++0.3.0+mediamtx
+diff --git a/meson.build b/meson.build
+index 58bb9893..41fc661f 100644
+--- a/meson.build
++++ b/meson.build
+@@ -2,7 +2,7 @@
+
+ project('libcamera', 'c', 'cpp',
+     meson_version : '>= 0.60',
+-    version : '0.3.0',
++    version : '9.9.9',
+     default_options : [
+         'werror=true',
+         'warning_level=2',
+diff --git a/src/ipa/meson.build b/src/ipa/meson.build
+index 0ad4631d..101b41ad 100644
+--- a/src/ipa/meson.build
++++ b/src/ipa/meson.build
+@@ -8,12 +8,9 @@ ipa_install_dir = libcamera_libdir
+ ipa_data_dir = libcamera_datadir / 'ipa'
+ ipa_sysconf_dir = libcamera_sysconfdir / 'ipa'
+
+-config_h.set('IPA_CONFIG_DIR',
+-             '"' + get_option('prefix') / ipa_sysconf_dir +
+-             ':' + get_option('prefix') / ipa_data_dir + '"')
++config_h.set('IPA_CONFIG_DIR', '"./ipa_conf"')
+
+-config_h.set('IPA_MODULE_DIR',
+-             '"' + get_option('prefix') / ipa_install_dir + '"')
++config_h.set('IPA_MODULE_DIR', '"./ipa_module"')
+
+ summary({
+          'IPA_CONFIG_DIR' : config_h.get('IPA_CONFIG_DIR'),
+diff --git a/src/libcamera/meson.build b/src/libcamera/meson.build
+index 89504cee..be183929 100644
+--- a/src/libcamera/meson.build
++++ b/src/libcamera/meson.build
+@@ -61,7 +61,7 @@ includes = [
+
+ libcamera_deps = []
+
+-libatomic = cc.find_library('atomic', required : false)
++libatomic = cc.find_library('atomic', required : true, static : true)
+ libthreads = dependency('threads')
+
+ subdir('base')
+@@ -82,24 +82,9 @@ endif
+ libudev = dependency('libudev', required : get_option('udev'))
+ libyaml = dependency('yaml-0.1', required : false)
+
+-# Use one of gnutls or libcrypto (provided by OpenSSL), trying gnutls first.
+-libcrypto = dependency('gnutls', required : false)
+-if libcrypto.found()
+-    config_h.set('HAVE_GNUTLS', 1)
+-else
+-    libcrypto = dependency('libcrypto', required : false)
+-    if libcrypto.found()
+-        config_h.set('HAVE_CRYPTO', 1)
+-    endif
+-endif
+-
+-if not libcrypto.found()
+-    warning('Neither gnutls nor libcrypto found, all IPA modules will be isolated')
+-    summary({'IPA modules signed with': 'None (modules will run isolated)'},
+-            section : 'Configuration')
+-else
+-    summary({'IPA modules signed with' : libcrypto.name()}, section : 'Configuration')
+-endif
++libcrypto_proj = subproject('openssl', default_options : [ 'c_std=none', 'default_library=static' ])
++libcrypto = libcrypto_proj.get_variable('libcrypto_dep')
++config_h.set('HAVE_CRYPTO', 1)
+
+ if liblttng.found()
+     tracing_enabled = true
+diff --git a/src/libcamera/proxy/worker/meson.build b/src/libcamera/proxy/worker/meson.build
+index aa4d9cd7..31b994a9 100644
+--- a/src/libcamera/proxy/worker/meson.build
++++ b/src/libcamera/proxy/worker/meson.build
+@@ -24,8 +24,7 @@ foreach mojom : ipa_mojoms
+                        dependencies : libcamera_private)
+ endforeach
+
+-config_h.set('IPA_PROXY_DIR',
+-             '"' + get_option('prefix') / proxy_install_dir + '"')
++config_h.set('IPA_PROXY_DIR', '"/dev/null"')
+
+ summary({
+          'IPA_PROXY_DIR' : config_h.get('IPA_PROXY_DIR'),
+diff --git a/subprojects/openssl.wrap b/subprojects/openssl.wrap
+new file mode 100644
+index 00000000..873d5510
+--- /dev/null
++++ b/subprojects/openssl.wrap
+@@ -0,0 +1,15 @@
++[wrap-file]
++directory = openssl-3.0.8
++source_url = https://www.openssl.org/source/openssl-3.0.8.tar.gz
++source_filename = openssl-3.0.8.tar.gz
++source_hash = 6c13d2bf38fdf31eac3ce2a347073673f5d63263398f1f69d0df4a41253e4b3e
++patch_filename = openssl_3.0.8-3_patch.zip
++patch_url = https://wrapdb.mesonbuild.com/v2/openssl_3.0.8-3/get_patch
++patch_hash = 300da189e106942347d61a4a4295aa2edbcf06184f8d13b4cee0bed9fb936963
++source_fallback_url = https://github.com/mesonbuild/wrapdb/releases/download/openssl_3.0.8-3/openssl-3.0.8.tar.gz
++wrapdb_version = 3.0.8-3
++
++[provide]
++libcrypto = libcrypto_dep
++libssl = libssl_dep
++openssl = openssl_dep

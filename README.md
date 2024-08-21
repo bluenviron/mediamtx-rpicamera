@@ -15,13 +15,11 @@ This is embedded into all MediaMTX releases and shouldn't normally be downloaded
    ```sh
    sudo apt install -y \
    g++ \
-   make \
    xxd \
    wget \
    git \
    cmake \
    meson \
-   patch \
    pkg-config \
    python3-jinja2 \
    python3-yaml \
@@ -31,10 +29,10 @@ This is embedded into all MediaMTX releases and shouldn't normally be downloaded
 3. Build:
 
    ```sh
-   make -j$(nproc)
+   meson setup build && DESTDIR=./prefix ninja -C build install
    ```
 
-   This will produce the `mtxrpicam_32` or `mtxrpicam_64` folder (depending on the architecture).
+   This will produce the `build/mtxrpicam_32` or `build/mtxrpicam_64` folder (depending on the architecture).
 
 ## Cross-compile
 
@@ -48,7 +46,7 @@ This is embedded into all MediaMTX releases and shouldn't normally be downloaded
    make -f utils.mk build
    ```
 
-   This will produce the `mtxrpicam_32` and `mtxrpicam_64` folders.
+   This will produce the `build/mtxrpicam_32` and `build/mtxrpicam_64` folders.
 
 ## Install
 
@@ -56,7 +54,7 @@ This is embedded into all MediaMTX releases and shouldn't normally be downloaded
 
 2. Run `go generate ./...`
 
-3. Copy `mtxrpicam_32` and/or `mtxrpicam_64` inside `internal/staticsources/rpicamera/`
+3. Copy `build/mtxrpicam_32` and/or `build/mtxrpicam_64` inside `internal/staticsources/rpicamera/`
 
 4. Compile MediaMTX
 
