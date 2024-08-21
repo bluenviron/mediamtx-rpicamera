@@ -34,6 +34,41 @@ This is embedded into all MediaMTX releases and shouldn't normally be downloaded
 
    This will produce the `build/mtxrpicam_32` or `build/mtxrpicam_64` folder (depending on the architecture).
 
+## Compile against an external libcamera
+
+1. You must be on a Raspberry Pi, running Raspberry Pi OS Bullseye
+
+2. Install build dependencies:
+
+   ```sh
+   sudo apt install -y \
+   g++ \
+   xxd \
+   wget \
+   git \
+   cmake \
+   meson \
+   pkg-config \
+   python3-jinja2 \
+   python3-yaml \
+   python3-ply
+   ```
+
+3. Make sure that the development package of your libcamera is installed, otherwise install the default one:
+
+   ```sh
+   sudo apt install -y \
+   libcamera-dev
+   ```
+
+3. Build with `--wrap-mode=default` (that disables embedded libraries):
+
+   ```sh
+   meson setup --wrap-mode=default build && DESTDIR=./prefix ninja -C build install
+   ```
+
+   This will produce the `build/mtxrpicam_32` or `build/mtxrpicam_64` folder (depending on the architecture).
+
 ## Cross-compile
 
 1. You can be on any machine you like
