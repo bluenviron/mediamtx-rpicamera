@@ -96,3 +96,11 @@ This is embedded into all MediaMTX releases and shouldn't normally be downloaded
    ```sh
    go build .
    ```
+
+## License
+
+All the code in this repository is released under the [MIT License](LICENSE). Compiled binaries make use of some third-party dependencies:
+
+* libcamera, released under the [MIT license](https://git.libcamera.org/libcamera/libcamera.git/tree/LICENSES)
+* freetype, released under the [FreeType license](https://github.com/freetype/freetype/blob/master/LICENSE.TXT)
+* x264, released under the [GPL v2](https://gitlab.freedesktop.org/gstreamer/meson-ports/x264/-/blob/meson/COPYING)
