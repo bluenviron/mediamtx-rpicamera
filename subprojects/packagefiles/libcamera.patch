@@ -78,6 +78,19 @@ index 89504cee..be183929 100644
 
  if liblttng.found()
      tracing_enabled = true
+diff --git a/src/libcamera/pipeline/rpi/pisp/meson.build b/src/libcamera/pipeline/rpi/pisp/meson.build
+index 1f0ca3ca..170b9744 100644
+--- a/src/libcamera/pipeline/rpi/pisp/meson.build
++++ b/src/libcamera/pipeline/rpi/pisp/meson.build
+@@ -5,7 +5,7 @@ libcamera_sources += files([
+ ])
+
+ librt = cc.find_library('rt', required : true)
+-libpisp_dep = dependency('libpisp', fallback : ['libpisp', 'libpisp_dep'])
++libpisp_dep = dependency('libpisp', fallback : ['libpisp', 'libpisp_dep'], static : true)
+
+ libcamera_deps += [libpisp_dep, librt]
+
 diff --git a/src/libcamera/proxy/worker/meson.build b/src/libcamera/proxy/worker/meson.build
 index aa4d9cd7..31b994a9 100644
 --- a/src/libcamera/proxy/worker/meson.build
