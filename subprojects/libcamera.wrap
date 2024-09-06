@@ -1,5 +1,4 @@
 [wrap-git]
 url = https://github.com/raspberrypi/libcamera
-# v0.3.0+rpt20240617
-revision = 6ddd79b5bdbedc1f61007aed35391f1559f9e29a
+revision = v0.3.0+rpt20240617
 diff_files = libcamera.patch

@@ -1,0 +1,5 @@
+[wrap-git]
+url = https://github.com/raspberrypi/libpisp.git
+# this must be aligned with version inside libcamera
+revision = v1.0.6
+diff_files = libpisp.patch
