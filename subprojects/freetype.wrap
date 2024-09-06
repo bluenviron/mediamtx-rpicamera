@@ -1,4 +1,3 @@
 [wrap-git]
 url = https://github.com/freetype/freetype
-# VER-2-11-1
-revision = 3f83daeecb1a78d851b660eed025eeba362c0e4a
+revision = VER-2-11-1

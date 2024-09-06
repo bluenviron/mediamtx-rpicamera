@@ -4,3 +4,4 @@
 !/subprojects/freetype.wrap
 !/subprojects/libcamera.wrap
 !/subprojects/x264.wrap
+!/subprojects/libpisp.wrap
