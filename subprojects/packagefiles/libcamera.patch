@@ -38,7 +38,7 @@ index 0ad4631d..101b41ad 100644
  summary({
           'IPA_CONFIG_DIR' : config_h.get('IPA_CONFIG_DIR'),
 diff --git a/src/libcamera/meson.build b/src/libcamera/meson.build
-index 89504cee..be183929 100644
+index 89504cee..44021fdf 100644
 --- a/src/libcamera/meson.build
 +++ b/src/libcamera/meson.build
 @@ -61,7 +61,7 @@ includes = [
@@ -72,7 +72,7 @@ index 89504cee..be183929 100644
 -else
 -    summary({'IPA modules signed with' : libcrypto.name()}, section : 'Configuration')
 -endif
-+libcrypto_proj = subproject('openssl', default_options : [ 'c_std=none', 'default_library=static' ])
++libcrypto_proj = subproject('openssl', default_options : [ 'default_library=static' ])
 +libcrypto = libcrypto_proj.get_variable('libcrypto_dep')
 +config_h.set('HAVE_CRYPTO', 1)
 
@@ -105,24 +105,3 @@ index aa4d9cd7..31b994a9 100644
 
  summary({
           'IPA_PROXY_DIR' : config_h.get('IPA_PROXY_DIR'),
-diff --git a/subprojects/openssl.wrap b/subprojects/openssl.wrap
-new file mode 100644
-index 00000000..873d5510
---- /dev/null
-+++ b/subprojects/openssl.wrap
-@@ -0,0 +1,15 @@
-+[wrap-file]
-+directory = openssl-3.0.8
-+source_url = https://www.openssl.org/source/openssl-3.0.8.tar.gz
-+source_filename = openssl-3.0.8.tar.gz
-+source_hash = 6c13d2bf38fdf31eac3ce2a347073673f5d63263398f1f69d0df4a41253e4b3e
-+patch_filename = openssl_3.0.8-3_patch.zip
-+patch_url = https://wrapdb.mesonbuild.com/v2/openssl_3.0.8-3/get_patch
-+patch_hash = 300da189e106942347d61a4a4295aa2edbcf06184f8d13b4cee0bed9fb936963
-+source_fallback_url = https://github.com/mesonbuild/wrapdb/releases/download/openssl_3.0.8-3/openssl-3.0.8.tar.gz
-+wrapdb_version = 3.0.8-3
-+
-+[provide]
-+libcrypto = libcrypto_dep
-+libssl = libssl_dep
-+openssl = openssl_dep

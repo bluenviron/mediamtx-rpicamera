@@ -5,3 +5,4 @@
 !/subprojects/libcamera.wrap
 !/subprojects/x264.wrap
 !/subprojects/libpisp.wrap
+!/subprojects/openssl.wrap
