@@ -89,7 +89,7 @@ This is embedded into all MediaMTX releases and shouldn't normally be downloaded
 
 2. Run `go generate ./...`
 
-3. Copy `build/mtxrpicam_32` and/or `build/mtxrpicam_64` inside `internal/staticsources/rpicamera/`
+3. Copy `build/mtxrpicam_32` and/or `build/mtxrpicam_64` inside `internal/staticsources/rpicamera/`, overriding existing folders
 
 4. Compile MediaMTX
 
