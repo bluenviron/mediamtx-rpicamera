@@ -41,11 +41,6 @@ bool encoder_soft_h264_create(const parameters_t *params, int stride, int colors
     encoder_soft_h264_priv_t *encp = (encoder_soft_h264_priv_t *)(*enc);
     memset(encp, 0, sizeof(encoder_soft_h264_priv_t));
 
-    if (stride != (int)params->width) {
-        set_error("unsupported stride: expected %d, got %d", params->width, stride);
-        goto failed;
-    }
-
     int res = x264_param_default_preset(&encp->x_params, PRESET, TUNE);
     if (res < 0) {
         set_error("x264_param_default_preset() failed");
@@ -85,9 +80,9 @@ bool encoder_soft_h264_create(const parameters_t *params, int stride, int colors
     x264_picture_init(&encp->x_pic_in);
     encp->x_pic_in.img.i_csp = encp->x_params.i_csp;
     encp->x_pic_in.img.i_plane = 3;
-    encp->x_pic_in.img.i_stride[0] = encp->x_params.i_width;
-    encp->x_pic_in.img.i_stride[1] = ((encp->x_params.i_width * 256/2) >> 8) * 1;
-    encp->x_pic_in.img.i_stride[2] = ((encp->x_params.i_width * 256/2) >> 8) * 1;
+    encp->x_pic_in.img.i_stride[0] = stride;
+    encp->x_pic_in.img.i_stride[1] = stride >> 1;
+    encp->x_pic_in.img.i_stride[2] = stride >> 1;
 
     x264_picture_alloc(&encp->x_pic_out, encp->x_params.i_csp, encp->x_params.i_width, encp->x_params.i_height);
 
