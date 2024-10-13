@@ -44,7 +44,7 @@ jobs:
 
           // write version to disk
           let existing = await fs.readFile('subprojects/freetype.wrap', 'utf-8');
-          existing = existing.replace(/revision = .*?/, `revision = ${curTag.name}`);
+          existing = existing.replace(/revision = .+/, `revision = ${curTag.name}`);
           await fs.writeFile('subprojects/freetype.wrap', existing, 'utf-8');
 
           // make version available to next steps
