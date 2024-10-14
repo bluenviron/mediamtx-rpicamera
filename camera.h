@@ -7,8 +7,6 @@ typedef void camera_t;
 
 typedef void (*camera_frame_cb)(
     uint8_t *mapped_buffer,
-    int stride,
-    int height,
     int buffer_fd,
     uint64_t size,
     uint64_t timestamp);
@@ -19,8 +17,8 @@ extern "C" {
 
 const char *camera_get_error();
 bool camera_create(const parameters_t *params, camera_frame_cb frame_cb, camera_t **cam);
-int camera_get_mode_stride(camera_t *cam);
-int camera_get_mode_colorspace(camera_t *cam);
+int camera_get_stride(camera_t *cam);
+int camera_get_colorspace(camera_t *cam);
 bool camera_start(camera_t *cam);
 void camera_reload_params(camera_t *cam, const parameters_t *params);
 

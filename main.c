@@ -19,12 +19,10 @@ static encoder_t *enc;
 
 static void on_frame(
     uint8_t *mapped_buffer,
-    int stride,
-    int height,
     int buffer_fd,
     uint64_t size,
     uint64_t timestamp) {
-    text_draw(text, mapped_buffer, stride, height);
+    text_draw(text, mapped_buffer);
     encoder_encode(enc, mapped_buffer, buffer_fd, size, timestamp);
 }
 
@@ -67,7 +65,10 @@ int main() {
         return -1;
     }
 
-    ok = text_create(&params, &text);
+    ok = text_create(
+        &params,
+        camera_get_stride(cam),
+        &text);
     if (!ok) {
         pipe_write_error(pipe_video_fd, "text_create(): %s", text_get_error());
         return -1;
@@ -75,8 +76,8 @@ int main() {
 
     ok = encoder_create(
         &params,
-        camera_get_mode_stride(cam),
-        camera_get_mode_colorspace(cam),
+        camera_get_stride(cam),
+        camera_get_colorspace(cam),
         on_encoder_output,
         &enc);
     if (!ok) {
