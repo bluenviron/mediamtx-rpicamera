@@ -5,7 +5,10 @@
 
 typedef void encoder_t;
 
-typedef void (*encoder_output_cb)(uint64_t ts, const uint8_t *buf, uint64_t size);
+typedef void (*encoder_output_cb)(
+    uint64_t ts,
+    const uint8_t *buf,
+    uint64_t size);
 
 const char *encoder_get_error();
 bool encoder_create(const parameters_t *params, int stride, int colorspace, encoder_output_cb output_cb, encoder_t **enc);

@@ -22,17 +22,21 @@ const char *text_get_error() {
 typedef struct {
     bool enabled;
     char *text_overlay;
+    int stride;
+    int height;
     FT_Library library;
     FT_Face face;
 } text_priv_t;
 
-bool text_create(const parameters_t *params, text_t **text) {
+bool text_create(const parameters_t *params, int stride, text_t **text) {
     *text = malloc(sizeof(text_priv_t));
     text_priv_t *textp = (text_priv_t *)(*text);
     memset(textp, 0, sizeof(text_priv_t));
 
     textp->enabled = params->text_overlay_enable;
     textp->text_overlay = strdup(params->text_overlay);
+    textp->stride = stride;
+    textp->height = params->height;
 
     if (textp->enabled) {
         int error = FT_Init_FreeType(&textp->library);
@@ -130,7 +134,7 @@ static int get_text_width(FT_Face face, const char *text) {
     return ret;
 }
 
-void text_draw(text_t *text, uint8_t *buf, int stride, int height) {
+void text_draw(text_t *text, uint8_t *buf) {
     text_priv_t *textp = (text_priv_t *)text;
 
     if (textp->enabled) {
@@ -142,8 +146,8 @@ void text_draw(text_t *text, uint8_t *buf, int stride, int height) {
 
         draw_rect(
             buf,
-            stride,
-            height,
+            textp->stride,
+            textp->height,
             7,
             7,
             get_text_width(textp->face, buffer) + 10,
@@ -160,8 +164,8 @@ void text_draw(text_t *text, uint8_t *buf, int stride, int height) {
 
             draw_bitmap(
                 buf,
-                stride,
-                height,
+                textp->stride,
+                textp->height,
                 &textp->face->glyph->bitmap,
                 x + textp->face->glyph->bitmap_left,
                 y - textp->face->glyph->bitmap_top);

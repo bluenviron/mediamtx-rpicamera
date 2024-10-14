@@ -293,8 +293,6 @@ static void on_request_complete(Request *request) {
 
     camp->frame_cb(
         camp->mapped_buffers.at(buffer),
-        camp->video_stream->configuration().stride,
-        camp->video_stream->configuration().size.height,
         buffer->planes()[0].fd.get(),
         buffer_size(buffer->planes()),
         ts);
@@ -310,12 +308,12 @@ static void on_request_complete(Request *request) {
     camp->camera->queueRequest(request);
 }
 
-int camera_get_mode_stride(camera_t *cam) {
+int camera_get_stride(camera_t *cam) {
     CameraPriv *camp = (CameraPriv *)cam;
     return camp->video_stream->configuration().stride;
 }
 
-int camera_get_mode_colorspace(camera_t *cam) {
+int camera_get_colorspace(camera_t *cam) {
     CameraPriv *camp = (CameraPriv *)cam;
     return get_v4l2_colorspace(camp->video_stream->configuration().colorSpace);
 }
