@@ -43,8 +43,11 @@ typedef struct {
 static void *output_thread(void *userdata) {
     encoder_hard_h264_priv_t *encp = (encoder_hard_h264_priv_t *)userdata;
 
+    struct pollfd p = { encp->fd, POLLIN, 0 };
+    struct v4l2_buffer buf = {0};
+    struct v4l2_plane planes[VIDEO_MAX_PLANES] = {0};
+
     while (true) {
-        struct pollfd p = { encp->fd, POLLIN, 0 };
         int res = poll(&p, 1, POLL_TIMEOUT_MS);
         if (res == -1) {
             fprintf(stderr, "output_thread(): poll() failed\n");
@@ -52,49 +55,34 @@ static void *output_thread(void *userdata) {
         }
 
         if (p.revents & POLLIN) {
-            struct v4l2_buffer buf = {0};
-            struct v4l2_plane planes[VIDEO_MAX_PLANES] = {0};
             buf.type = V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE;
-            buf.memory = V4L2_MEMORY_DMABUF;
             buf.length = 1;
             buf.m.planes = planes;
             int res = ioctl(encp->fd, VIDIOC_DQBUF, &buf);
             if (res != 0) {
-                fprintf(stderr, "output_thread(): ioctl(VIDIOC_DQBUF) failed\n");
+                fprintf(stderr, "output_thread(): ioctl(VIDIOC_DQBUF, V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE) failed\n");
                 exit(1);
             }
 
-            memset(&buf, 0, sizeof(buf));
-            memset(planes, 0, sizeof(planes));
             buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE;
-            buf.memory = V4L2_MEMORY_MMAP;
             buf.length = 1;
             buf.m.planes = planes;
             res = ioctl(encp->fd, VIDIOC_DQBUF, &buf);
-            if (res == 0) {
-                uint64_t ts = ((uint64_t)buf.timestamp.tv_sec * (uint64_t)1000000) + (uint64_t)buf.timestamp.tv_usec;
+            if (res != 0) {
+                fprintf(stderr, "output_thread(): ioctl(VIDIOC_DQBUF, V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE) failed\n");
+                exit(1);
+            }
 
-                const uint8_t *bufmem = (const uint8_t *)encp->capture_buffers[buf.index];
-                int bufsize = buf.m.planes[0].bytesused;
-                encp->output_cb(ts, bufmem, bufsize);
+            uint64_t ts = ((uint64_t)buf.timestamp.tv_sec * (uint64_t)1000000) + (uint64_t)buf.timestamp.tv_usec;
 
-                int index = buf.index;
-                int length = buf.m.planes[0].length;
+            const uint8_t *buf_mem = (const uint8_t *)encp->capture_buffers[buf.index];
+            int buf_size = buf.m.planes[0].bytesused;
+            encp->output_cb(ts, buf_mem, buf_size);
 
-                struct v4l2_buffer buf = {0};
-                struct v4l2_plane planes[VIDEO_MAX_PLANES] = {0};
-                buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE;
-                buf.memory = V4L2_MEMORY_MMAP;
-                buf.index = index;
-                buf.length = 1;
-                buf.m.planes = planes;
-                buf.m.planes[0].bytesused = 0;
-                buf.m.planes[0].length = length;
-                int res = ioctl(encp->fd, VIDIOC_QBUF, &buf);
-                if (res < 0) {
-                    fprintf(stderr, "output_thread(): ioctl(VIDIOC_QBUF) failed\n");
-                    exit(1);
-                }
+            res = ioctl(encp->fd, VIDIOC_QBUF, &buf);
+            if (res != 0) {
+                fprintf(stderr, "output_thread(): ioctl(VIDIOC_QBUF) failed\n");
+                exit(1);
             }
         }
     }
@@ -169,17 +157,16 @@ bool encoder_hard_h264_create(const parameters_t *params, int stride, int colors
     fmt.fmt.pix_mp.width = params->width;
     fmt.fmt.pix_mp.height = params->height;
     fmt.fmt.pix_mp.pixelformat = V4L2_PIX_FMT_YUV420;
-    fmt.fmt.pix_mp.plane_fmt[0].bytesperline = stride;
     fmt.fmt.pix_mp.field = V4L2_FIELD_ANY;
     fmt.fmt.pix_mp.colorspace = colorspace;
     fmt.fmt.pix_mp.num_planes = 1;
+    fmt.fmt.pix_mp.plane_fmt[0].bytesperline = stride;
     res = ioctl(encp->fd, VIDIOC_S_FMT, &fmt);
     if (res != 0) {
         set_error("unable to set output format");
         goto failed;
     }
 
-    memset(&fmt, 0, sizeof(fmt));
     fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE;
     fmt.fmt.pix_mp.width = params->width;
     fmt.fmt.pix_mp.height = params->height;
@@ -215,7 +202,6 @@ bool encoder_hard_h264_create(const parameters_t *params, int stride, int colors
         goto failed;
     }
 
-    memset(&reqbufs, 0, sizeof(reqbufs));
     reqbufs.count = params->capture_buffer_count;
     reqbufs.type = V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE;
     reqbufs.memory = V4L2_MEMORY_MMAP;
@@ -227,10 +213,10 @@ bool encoder_hard_h264_create(const parameters_t *params, int stride, int colors
 
     encp->capture_buffers = malloc(sizeof(void *) * reqbufs.count);
 
-    for (unsigned int i = 0; i < reqbufs.count; i++) {
-        struct v4l2_plane planes[VIDEO_MAX_PLANES];
+    struct v4l2_plane planes[VIDEO_MAX_PLANES];
+    struct v4l2_buffer buffer = {0};
 
-        struct v4l2_buffer buffer = {0};
+    for (unsigned int i = 0; i < reqbufs.count; i++) {
         buffer.type = V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE;
         buffer.memory = V4L2_MEMORY_MMAP;
         buffer.index = i;
