@@ -9,15 +9,13 @@
 #include <sys/mman.h>
 #include <sys/ioctl.h>
 #include <errno.h>
-#include <poll.h>
 #include <pthread.h>
 
 #include <linux/videodev2.h>
 
 #include "encoder_hard_h264.h"
 
-#define DEVICE              "/dev/video11"
-#define POLL_TIMEOUT_MS     200
+#define DEVICE "/dev/video11"
 
 static char errbuf[256];
 
@@ -43,47 +41,36 @@ typedef struct {
 static void *output_thread(void *userdata) {
     encoder_hard_h264_priv_t *encp = (encoder_hard_h264_priv_t *)userdata;
 
-    struct pollfd p = { encp->fd, POLLIN, 0 };
     struct v4l2_buffer buf = {0};
     struct v4l2_plane planes[VIDEO_MAX_PLANES] = {0};
 
     while (true) {
-        int res = poll(&p, 1, POLL_TIMEOUT_MS);
-        if (res == -1) {
-            fprintf(stderr, "output_thread(): poll() failed\n");
+        buf.type = V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE;
+        buf.length = 1;
+        buf.m.planes = planes;
+        int res = ioctl(encp->fd, VIDIOC_DQBUF, &buf);
+        if (res != 0) {
+            fprintf(stderr, "output_thread(): ioctl(VIDIOC_DQBUF, V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE) failed\n");
             exit(1);
         }
 
-        if (p.revents & POLLIN) {
-            buf.type = V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE;
-            buf.length = 1;
-            buf.m.planes = planes;
-            int res = ioctl(encp->fd, VIDIOC_DQBUF, &buf);
-            if (res != 0) {
-                fprintf(stderr, "output_thread(): ioctl(VIDIOC_DQBUF, V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE) failed\n");
-                exit(1);
-            }
+        buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE;
+        res = ioctl(encp->fd, VIDIOC_DQBUF, &buf);
+        if (res != 0) {
+            fprintf(stderr, "output_thread(): ioctl(VIDIOC_DQBUF, V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE) failed\n");
+            exit(1);
+        }
 
-            buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE;
-            buf.length = 1;
-            buf.m.planes = planes;
-            res = ioctl(encp->fd, VIDIOC_DQBUF, &buf);
-            if (res != 0) {
-                fprintf(stderr, "output_thread(): ioctl(VIDIOC_DQBUF, V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE) failed\n");
-                exit(1);
-            }
+        uint64_t ts = ((uint64_t)buf.timestamp.tv_sec * (uint64_t)1000000) + (uint64_t)buf.timestamp.tv_usec;
 
-            uint64_t ts = ((uint64_t)buf.timestamp.tv_sec * (uint64_t)1000000) + (uint64_t)buf.timestamp.tv_usec;
+        const uint8_t *buf_mem = (const uint8_t *)encp->capture_buffers[buf.index];
+        int buf_size = buf.m.planes[0].bytesused;
+        encp->output_cb(ts, buf_mem, buf_size);
 
-            const uint8_t *buf_mem = (const uint8_t *)encp->capture_buffers[buf.index];
-            int buf_size = buf.m.planes[0].bytesused;
-            encp->output_cb(ts, buf_mem, buf_size);
-
-            res = ioctl(encp->fd, VIDIOC_QBUF, &buf);
-            if (res != 0) {
-                fprintf(stderr, "output_thread(): ioctl(VIDIOC_QBUF) failed\n");
-                exit(1);
-            }
+        res = ioctl(encp->fd, VIDIOC_QBUF, &buf);
+        if (res != 0) {
+            fprintf(stderr, "output_thread(): ioctl(VIDIOC_QBUF) failed\n");
+            exit(1);
         }
     }
 
