@@ -4,18 +4,23 @@
 #include "window.h"
 
 bool window_load(const char *encoded, window_t *window) {
+    char *copy = strdup(encoded);
     float vals[4];
     int i = 0;
-    char *token = strtok((char *)encoded, ",");
-    while (token != NULL) {
+    char *ptr = copy;
+    char *token;
+
+    while ((token = strsep(&ptr, ",")) != NULL)  {
         vals[i] = atof(token);
         if (vals[i] < 0 || vals[i] > 1) {
+            free(copy);
             return false;
         }
 
         i++;
-        token = strtok(NULL, ",");
     }
+
+    free(copy);
 
     if (i != 4) {
         return false;
