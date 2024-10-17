@@ -24,16 +24,13 @@ const char *parameters_get_error() {
 bool parameters_unserialize(parameters_t *params, const uint8_t *buf, size_t buf_size) {
     memset(params, 0, sizeof(parameters_t));
 
-    char *tmp = malloc(buf_size + 1);
-    memcpy(tmp, buf, buf_size);
-    tmp[buf_size] = 0x00;
+    char *copy = malloc(buf_size + 1);
+    memcpy(copy, buf, buf_size);
+    copy[buf_size] = 0x00;
+    char *ptr = copy;
+    char *entry;
 
-    while (true)  {
-        char *entry = strsep(&tmp, " ");
-        if (entry == NULL) {
-            break;
-        }
-
+    while ((entry = strsep(&ptr, " ")) != NULL)  {
         char *key = strsep(&entry, ":");
         char *val = strsep(&entry, ":");
 
@@ -160,7 +157,7 @@ bool parameters_unserialize(parameters_t *params, const uint8_t *buf, size_t buf
         }
     }
 
-    free(tmp);
+    free(copy);
 
     params->buffer_count = 6;
     params->capture_buffer_count = params->buffer_count * 2;
@@ -168,7 +165,7 @@ bool parameters_unserialize(parameters_t *params, const uint8_t *buf, size_t buf
     return true;
 
 failed:
-    free(tmp);
+    free(copy);
     parameters_destroy(params);
 
     return false;
