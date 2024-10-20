@@ -8,6 +8,9 @@
 #include <fcntl.h>
 #include <unistd.h>
 
+#include <linux/videodev2.h>
+#include <linux/dma-buf.h>
+#include <linux/dma-heap.h>
 #include <libcamera/camera_manager.h>
 #include <libcamera/camera.h>
 #include <libcamera/formats.h>
@@ -16,7 +19,6 @@
 #include <libcamera/framebuffer_allocator.h>
 #include <libcamera/property_ids.h>
 #include <libcamera/transform.h>
-#include <linux/videodev2.h>
 
 #include "camera.h"
 
@@ -31,16 +33,34 @@ using libcamera::Orientation;
 using libcamera::PixelFormat;
 using libcamera::Rectangle;
 using libcamera::Request;
+using libcamera::SharedFD;
 using libcamera::Size;
 using libcamera::Span;
 using libcamera::Stream;
 using libcamera::StreamRole;
 using libcamera::StreamConfiguration;
 using libcamera::Transform;
+using libcamera::UniqueFD;
 
 namespace controls = libcamera::controls;
 namespace formats = libcamera::formats;
 namespace properties = libcamera::properties;
+
+static const char *heap_positions[] = {
+    "/dev/dma_heap/vidbuf_cached",
+    "/dev/dma_heap/linux,cma",
+};
+
+// https://github.com/raspberrypi/rpicam-apps/blob/6de1ab6a899df35f929b2a15c0831780bd8e750e/core/dma_heaps.cpp
+static int create_dma_allocator() {
+    for (unsigned int i = 0; i < sizeof(heap_positions); i++) {
+        int fd = open(heap_positions[i], O_RDWR | O_CLOEXEC, 0);
+        if (fd >= 0) {
+            return fd;
+        }
+    }
+    return -1;
+}
 
 static char errbuf[256];
 
@@ -80,10 +100,10 @@ struct CameraPriv {
     std::unique_ptr<CameraManager> camera_manager;
     std::shared_ptr<Camera> camera;
     Stream *video_stream;
-    std::unique_ptr<FrameBufferAllocator> allocator;
     std::vector<std::unique_ptr<Request>> requests;
     std::mutex ctrls_mutex;
     std::unique_ptr<ControlList> ctrls;
+    std::vector<std::unique_ptr<FrameBuffer>> frame_buffers;
     std::map<FrameBuffer *, uint8_t *> mapped_buffers;
     bool ts_initialized;
     uint64_t ts_start;
@@ -94,22 +114,6 @@ static int get_v4l2_colorspace(std::optional<ColorSpace> const &cs) {
         return V4L2_COLORSPACE_REC709;
     }
     return V4L2_COLORSPACE_SMPTE170M;
-}
-
-// https://github.com/raspberrypi/libcamera-apps/blob/a5b5506a132056ac48ba22bc581cc394456da339/core/libcamera_app.cpp#L824
-static uint8_t *map_buffer(FrameBuffer *buffer) {
-    size_t buffer_size = 0;
-
-    for (unsigned i = 0; i < buffer->planes().size(); i++) {
-        const FrameBuffer::Plane &plane = buffer->planes()[i];
-        buffer_size += plane.length;
-
-        if (i == buffer->planes().size() - 1 || plane.fd.get() != buffer->planes()[i + 1].fd.get()) {
-            return (uint8_t *)mmap(NULL, buffer_size, PROT_READ | PROT_WRITE, MAP_SHARED, plane.fd.get(), 0);
-        }
-    }
-
-    return NULL;
 }
 
 // https://github.com/raspberrypi/libcamera-apps/blob/a6267d51949d0602eedf60f3ddf8c6685f652812/core/options.cpp#L101
@@ -175,7 +179,7 @@ bool camera_create(const parameters_t *params, camera_frame_cb frame_cb, camera_
         return false;
     }
 
-    std::vector<libcamera::StreamRole> stream_roles = { StreamRole::VideoRecording };
+    std::vector<StreamRole> stream_roles = { StreamRole::VideoRecording };
     if (params->mode != NULL) {
         stream_roles.push_back(StreamRole::Raw);
     }
@@ -187,7 +191,7 @@ bool camera_create(const parameters_t *params, camera_frame_cb frame_cb, camera_
     }
 
     StreamConfiguration &video_stream_conf = conf->at(0);
-    video_stream_conf.size = libcamera::Size(params->width, params->height);
+    video_stream_conf.size = Size(params->width, params->height);
     video_stream_conf.pixelFormat = formats::YUV420;
     video_stream_conf.bufferCount = params->buffer_count;
     if (params->width >= 1280 || params->height >= 720) {
@@ -234,30 +238,53 @@ bool camera_create(const parameters_t *params, camera_frame_cb frame_cb, camera_
         camp->requests.push_back(std::move(request));
     }
 
-    camp->allocator = std::make_unique<FrameBufferAllocator>(camp->camera);
+    // allocate DMA buffers manually instead of using default buffers provided by libcamera.
+    // this improves performance by a lot.
+    // https://forums.raspberrypi.com/viewtopic.php?t=352554
+    // https://github.com/raspberrypi/rpicam-apps/blob/6de1ab6a899df35f929b2a15c0831780bd8e750e/core/rpicam_app.cpp#L1012
+
+    int allocator_fd = create_dma_allocator();
+    if (allocator_fd < 0) {
+        set_error("failed to open dma heap allocator");
+        return false;
+    }
+
     for (StreamConfiguration &stream_conf : *conf) {
         Stream *stream = stream_conf.stream();
 
-        res = camp->allocator->allocate(stream);
-        if (res < 0) {
-            set_error("allocate() failed");
-            return false;
-        }
+        for (unsigned int i = 0; i < params->buffer_count; i++) {
+            struct dma_heap_allocation_data alloc = {};
+            alloc.len = stream_conf.frameSize;
+            alloc.fd_flags = O_CLOEXEC | O_RDWR;
+            int ret = ioctl(allocator_fd, DMA_HEAP_IOCTL_ALLOC, &alloc);
+            if (ret < 0) {
+                set_error("failed to allocate buffer in dma heap");
+                return false;
+            }
+            UniqueFD fd(alloc.fd);
 
-        int i = 0;
-        for (const std::unique_ptr<FrameBuffer> &buffer : camp->allocator->buffers(stream)) {
-            // map buffer of the video stream only
+            std::vector<FrameBuffer::Plane> plane(1);
+            plane[0].fd = SharedFD(std::move(fd));
+            plane[0].offset = 0;
+            plane[0].length = stream_conf.frameSize;
+
+            camp->frame_buffers.push_back(std::make_unique<FrameBuffer>(plane));
+            FrameBuffer *fb = camp->frame_buffers.back().get();
+
+            // map buffers of the video stream only
             if (stream == video_stream_conf.stream()) {
-                camp->mapped_buffers[buffer.get()] = map_buffer(buffer.get());
+                camp->mapped_buffers[fb] = (uint8_t*)mmap(NULL, stream_conf.frameSize, PROT_READ | PROT_WRITE, MAP_SHARED, plane[0].fd.get(), 0);
             }
 
-            res = camp->requests.at(i++)->addBuffer(stream, buffer.get());
+            res = camp->requests.at(i)->addBuffer(stream, fb);
             if (res != 0) {
                 set_error("addBuffer() failed");
                 return false;
             }
         }
     }
+
+    close(allocator_fd);
 
     camp->params = params;
     camp->frame_cb = frame_cb;

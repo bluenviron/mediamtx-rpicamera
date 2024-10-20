@@ -5,6 +5,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <pthread.h>
+#include <sys/ioctl.h>
+
+#include <linux/dma-buf.h>
 
 #include "parameters.h"
 #include "pipe.h"
@@ -18,17 +21,27 @@ static text_t *text;
 static encoder_t *enc;
 
 static void on_frame(
-    uint8_t *mapped_buffer,
-    int buffer_fd,
+    uint8_t *mapped,
+    int fd,
     uint64_t size,
-    uint64_t timestamp) {
-    text_draw(text, mapped_buffer);
-    encoder_encode(enc, mapped_buffer, buffer_fd, size, timestamp);
+    uint64_t ts) {
+    // mapped DMA buffers require a DMA_BUF_IOCTL_SYNC before and after usage.
+    // https://forums.raspberrypi.com/viewtopic.php?t=352554
+    struct dma_buf_sync dma_sync = {0};
+    dma_sync.flags = DMA_BUF_SYNC_START | DMA_BUF_SYNC_RW;
+    ioctl(fd, DMA_BUF_IOCTL_SYNC, &dma_sync);
+
+    text_draw(text, mapped);
+
+    dma_sync.flags = DMA_BUF_SYNC_END | DMA_BUF_SYNC_RW;
+    ioctl(fd, DMA_BUF_IOCTL_SYNC, &dma_sync);
+
+    encoder_encode(enc, mapped, fd, size, ts);
 }
 
-static void on_encoder_output(uint64_t ts, const uint8_t *buf, uint64_t size) {
+static void on_encoder_output(const uint8_t *mapped, uint64_t size, uint64_t ts) {
     pthread_mutex_lock(&pipe_video_mutex);
-    pipe_write_buf(pipe_video_fd, ts, buf, size);
+    pipe_write_buf(pipe_video_fd, mapped, size, ts);
     pthread_mutex_unlock(&pipe_video_mutex);
 }
 
