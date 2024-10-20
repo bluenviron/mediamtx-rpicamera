@@ -13,8 +13,6 @@
 #include "encoder_soft_h264.h"
 #include "encoder.h"
 
-#define HARDWARE_DEVICE "/dev/video11"
-
 static char errbuf[256];
 
 static void set_error(const char *format, ...) {
@@ -38,7 +36,7 @@ typedef struct {
 } encoder_priv_t;
 
 static bool supports_hardware_h264() {
-    int fd = open(HARDWARE_DEVICE, O_RDWR, 0);
+    int fd = open(ENCODER_HARD_H264_DEVICE, O_RDWR, 0);
     if (fd < 0) {
         return false;
     }

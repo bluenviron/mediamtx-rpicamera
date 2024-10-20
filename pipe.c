@@ -25,13 +25,13 @@ void pipe_write_ready(int fd) {
     write(fd, buf, n);
 }
 
-void pipe_write_buf(int fd, uint64_t ts, const uint8_t *buf, uint32_t n) {
+void pipe_write_buf(int fd, const uint8_t *mapped, uint32_t size, uint64_t ts) {
     char head[] = {'b'};
-    n += 1 + sizeof(uint64_t);
-    write(fd, &n, 4);
+    size += 1 + sizeof(uint64_t);
+    write(fd, &size, 4);
     write(fd, head, 1);
     write(fd, &ts, sizeof(uint64_t));
-    write(fd, buf, n - 1 - sizeof(uint64_t));
+    write(fd, mapped, size - 1 - sizeof(uint64_t));
 }
 
 uint32_t pipe_read(int fd, uint8_t **pbuf) {

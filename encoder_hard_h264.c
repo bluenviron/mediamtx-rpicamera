@@ -15,8 +15,6 @@
 
 #include "encoder_hard_h264.h"
 
-#define DEVICE "/dev/video11"
-
 static char errbuf[256];
 
 static void set_error(const char *format, ...) {
@@ -61,11 +59,11 @@ static void *output_thread(void *userdata) {
             exit(1);
         }
 
+        const uint8_t *mapped = (const uint8_t *)encp->capture_buffers[buf.index];
+        int size = buf.m.planes[0].bytesused;
         uint64_t ts = ((uint64_t)buf.timestamp.tv_sec * (uint64_t)1000000) + (uint64_t)buf.timestamp.tv_usec;
 
-        const uint8_t *buf_mem = (const uint8_t *)encp->capture_buffers[buf.index];
-        int buf_size = buf.m.planes[0].bytesused;
-        encp->output_cb(ts, buf_mem, buf_size);
+        encp->output_cb(mapped, size, ts);
 
         res = ioctl(encp->fd, VIDIOC_QBUF, &buf);
         if (res != 0) {
@@ -103,7 +101,7 @@ bool encoder_hard_h264_create(const parameters_t *params, int stride, int colors
     encoder_hard_h264_priv_t *encp = (encoder_hard_h264_priv_t *)(*enc);
     memset(encp, 0, sizeof(encoder_hard_h264_priv_t));
 
-    encp->fd = open(DEVICE, O_RDWR, 0);
+    encp->fd = open(ENCODER_HARD_H264_DEVICE, O_RDWR, 0);
     if (encp->fd < 0) {
         set_error("unable to open device");
         goto failed;
@@ -266,7 +264,7 @@ failed:
     return false;
 }
 
-void encoder_hard_h264_encode(encoder_hard_h264_t *enc, uint8_t *mapped_buffer, int buffer_fd, size_t size, uint64_t ts) {
+void encoder_hard_h264_encode(encoder_hard_h264_t *enc, uint8_t *mapped, int fd, size_t size, uint64_t ts) {
     encoder_hard_h264_priv_t *encp = (encoder_hard_h264_priv_t *)enc;
 
     int index = encp->cur_buffer++;
@@ -282,7 +280,7 @@ void encoder_hard_h264_encode(encoder_hard_h264_t *enc, uint8_t *mapped_buffer, 
     buf.timestamp.tv_sec = ts / 1000000;
     buf.timestamp.tv_usec = ts % 1000000;
     buf.m.planes = planes;
-    buf.m.planes[0].m.fd = buffer_fd;
+    buf.m.planes[0].m.fd = fd;
     buf.m.planes[0].bytesused = size;
     buf.m.planes[0].length = size;
     int res = ioctl(encp->fd, VIDIOC_QBUF, &buf);
