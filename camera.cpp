@@ -53,7 +53,7 @@ static const char *heap_positions[] = {
 
 // https://github.com/raspberrypi/rpicam-apps/blob/6de1ab6a899df35f929b2a15c0831780bd8e750e/core/dma_heaps.cpp
 static int create_dma_allocator() {
-    for (unsigned int i = 0; i < sizeof(heap_positions); i++) {
+    for (unsigned int i = 0; i < sizeof(heap_positions) / sizeof(const char *); i++) {
         int fd = open(heap_positions[i], O_RDWR | O_CLOEXEC, 0);
         if (fd >= 0) {
             return fd;
