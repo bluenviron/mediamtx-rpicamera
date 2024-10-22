@@ -6,14 +6,14 @@ index 00000000..d5df1ce3
 @@ -0,0 +1 @@
 +0.3.0+mediamtx
 diff --git a/meson.build b/meson.build
-index 58bb9893..41fc661f 100644
+index 86c6582e..cc34eac6 100644
 --- a/meson.build
 +++ b/meson.build
 @@ -2,7 +2,7 @@
 
  project('libcamera', 'c', 'cpp',
-     meson_version : '>= 0.60',
--    version : '0.3.0',
+     meson_version : '>= 0.63',
+-    version : '0.3.2',
 +    version : '9.9.9',
      default_options : [
          'werror=true',
@@ -38,10 +38,10 @@ index 0ad4631d..101b41ad 100644
  summary({
           'IPA_CONFIG_DIR' : config_h.get('IPA_CONFIG_DIR'),
 diff --git a/src/libcamera/meson.build b/src/libcamera/meson.build
-index 89504cee..44021fdf 100644
+index aa9ab029..3443d62c 100644
 --- a/src/libcamera/meson.build
 +++ b/src/libcamera/meson.build
-@@ -61,7 +61,7 @@ includes = [
+@@ -60,7 +60,7 @@ includes = [
 
  libcamera_deps = []
 
@@ -50,7 +50,7 @@ index 89504cee..44021fdf 100644
  libthreads = dependency('threads')
 
  subdir('base')
-@@ -82,24 +82,9 @@ endif
+@@ -81,24 +81,9 @@ endif
  libudev = dependency('libudev', required : get_option('udev'))
  libyaml = dependency('yaml-0.1', required : false)
 
@@ -79,10 +79,10 @@ index 89504cee..44021fdf 100644
  if liblttng.found()
      tracing_enabled = true
 diff --git a/src/libcamera/pipeline/rpi/pisp/meson.build b/src/libcamera/pipeline/rpi/pisp/meson.build
-index 1f0ca3ca..170b9744 100644
+index 178df94c..ecb18157 100644
 --- a/src/libcamera/pipeline/rpi/pisp/meson.build
 +++ b/src/libcamera/pipeline/rpi/pisp/meson.build
-@@ -5,7 +5,7 @@ libcamera_sources += files([
+@@ -5,7 +5,7 @@ libcamera_internal_sources += files([
  ])
 
  librt = cc.find_library('rt', required : true)
@@ -92,7 +92,7 @@ index 1f0ca3ca..170b9744 100644
  libcamera_deps += [libpisp_dep, librt]
 
 diff --git a/src/libcamera/proxy/worker/meson.build b/src/libcamera/proxy/worker/meson.build
-index aa4d9cd7..31b994a9 100644
+index 8c54a2e2..b455d7a4 100644
 --- a/src/libcamera/proxy/worker/meson.build
 +++ b/src/libcamera/proxy/worker/meson.build
 @@ -24,8 +24,7 @@ foreach mojom : ipa_mojoms
