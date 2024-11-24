@@ -15,8 +15,8 @@
 #include "text.h"
 #include "encoder.h"
 
-static int pipe_video_fd;
-static pthread_mutex_t pipe_video_mutex;
+static int pipe_out_fd;
+static pthread_mutex_t pipe_out_mutex;
 static text_t *text;
 static encoder_t *enc;
 
@@ -40,9 +40,15 @@ static void on_frame(
 }
 
 static void on_encoder_output(const uint8_t *mapped, uint64_t size, uint64_t ts) {
-    pthread_mutex_lock(&pipe_video_mutex);
-    pipe_write_buf(pipe_video_fd, mapped, size, ts);
-    pthread_mutex_unlock(&pipe_video_mutex);
+    pthread_mutex_lock(&pipe_out_mutex);
+    pipe_write_buf(pipe_out_fd, mapped, size, ts);
+    pthread_mutex_unlock(&pipe_out_mutex);
+}
+
+static void on_error() {
+    pthread_mutex_lock(&pipe_out_mutex);
+    pipe_write_error(pipe_out_fd, "camera driver exited");
+    pthread_mutex_unlock(&pipe_out_mutex);
 }
 
 int main() {
@@ -51,30 +57,31 @@ int main() {
         return 0;
     }
 
-    int pipe_conf_fd = atoi(getenv("PIPE_CONF_FD"));
-    pipe_video_fd = atoi(getenv("PIPE_VIDEO_FD"));
+    int pipe_in_fd = atoi(getenv("PIPE_CONF_FD"));
+    pipe_out_fd = atoi(getenv("PIPE_VIDEO_FD"));
 
     uint8_t *buf;
-    uint32_t n = pipe_read(pipe_conf_fd, &buf);
+    uint32_t n = pipe_read(pipe_in_fd, &buf);
 
     parameters_t params;
     bool ok = parameters_unserialize(&params, &buf[1], n-1);
     free(buf);
     if (!ok) {
-        pipe_write_error(pipe_video_fd, "parameters_unserialize(): %s", parameters_get_error());
+        pipe_write_error(pipe_out_fd, "parameters_unserialize(): %s", parameters_get_error());
         return -1;
     }
 
-    pthread_mutex_init(&pipe_video_mutex, NULL);
-    pthread_mutex_lock(&pipe_video_mutex);
+    pthread_mutex_init(&pipe_out_mutex, NULL);
+    pthread_mutex_lock(&pipe_out_mutex);
 
     camera_t *cam;
     ok = camera_create(
         &params,
         on_frame,
+        on_error,
         &cam);
     if (!ok) {
-        pipe_write_error(pipe_video_fd, "camera_create(): %s", camera_get_error());
+        pipe_write_error(pipe_out_fd, "camera_create(): %s", camera_get_error());
         return -1;
     }
 
@@ -83,7 +90,7 @@ int main() {
         camera_get_stride(cam),
         &text);
     if (!ok) {
-        pipe_write_error(pipe_video_fd, "text_create(): %s", text_get_error());
+        pipe_write_error(pipe_out_fd, "text_create(): %s", text_get_error());
         return -1;
     }
 
@@ -94,22 +101,22 @@ int main() {
         on_encoder_output,
         &enc);
     if (!ok) {
-        pipe_write_error(pipe_video_fd, "encoder_create(): %s", encoder_get_error());
+        pipe_write_error(pipe_out_fd, "encoder_create(): %s", encoder_get_error());
         return -1;
     }
 
     ok = camera_start(cam);
     if (!ok) {
-        pipe_write_error(pipe_video_fd, "camera_start(): %s", camera_get_error());
+        pipe_write_error(pipe_out_fd, "camera_start(): %s", camera_get_error());
         return -1;
     }
 
-    pipe_write_ready(pipe_video_fd);
-    pthread_mutex_unlock(&pipe_video_mutex);
+    pipe_write_ready(pipe_out_fd);
+    pthread_mutex_unlock(&pipe_out_mutex);
 
     while (true) {
         uint8_t *buf;
-        uint32_t n = pipe_read(pipe_conf_fd, &buf);
+        uint32_t n = pipe_read(pipe_in_fd, &buf);
 
         switch (buf[0]) {
         case 'e':

@@ -97,6 +97,7 @@ static PixelFormat mode_to_pixel_format(sensor_mode_t *mode) {
 struct CameraPriv {
     const parameters_t *params;
     camera_frame_cb frame_cb;
+    camera_error_cb error_cb;
     std::unique_ptr<CameraManager> camera_manager;
     std::shared_ptr<Camera> camera;
     Stream *video_stream;
@@ -107,6 +108,7 @@ struct CameraPriv {
     std::map<FrameBuffer *, uint8_t *> mapped_buffers;
     bool ts_initialized;
     uint64_t ts_start;
+    bool in_error;
 };
 
 static int get_v4l2_colorspace(std::optional<ColorSpace> const &cs) {
@@ -133,7 +135,11 @@ static void set_hdr(bool hdr) {
     }
 }
 
-bool camera_create(const parameters_t *params, camera_frame_cb frame_cb, camera_t **cam) {
+bool camera_create(
+    const parameters_t *params,
+    camera_frame_cb frame_cb,
+    camera_error_cb error_cb,
+    camera_t **cam) {
     std::unique_ptr<CameraPriv> camp = std::make_unique<CameraPriv>();
 
     set_hdr(params->hdr);
@@ -242,7 +248,6 @@ bool camera_create(const parameters_t *params, camera_frame_cb frame_cb, camera_
     // this improves performance by a lot.
     // https://forums.raspberrypi.com/viewtopic.php?t=352554
     // https://github.com/raspberrypi/rpicam-apps/blob/6de1ab6a899df35f929b2a15c0831780bd8e750e/core/rpicam_app.cpp#L1012
-
     int allocator_fd = create_dma_allocator();
     if (allocator_fd < 0) {
         set_error("failed to open dma heap allocator");
@@ -288,6 +293,7 @@ bool camera_create(const parameters_t *params, camera_frame_cb frame_cb, camera_
 
     camp->params = params;
     camp->frame_cb = frame_cb;
+    camp->error_cb = error_cb;
     *cam = camp.release();
 
     return true;
@@ -302,11 +308,17 @@ static int buffer_size(const std::vector<FrameBuffer::Plane> &planes) {
 }
 
 static void on_request_complete(Request *request) {
-    if (request->status() == Request::RequestCancelled) {
+    CameraPriv *camp = (CameraPriv *)request->cookie();
+
+    if (camp->in_error) {
         return;
     }
 
-    CameraPriv *camp = (CameraPriv *)request->cookie();
+    if (request->status() == Request::RequestCancelled) {
+        camp->in_error = true;
+        camp->error_cb();
+        return;
+    }
 
     FrameBuffer *buffer = request->buffers().at(camp->video_stream);
 
