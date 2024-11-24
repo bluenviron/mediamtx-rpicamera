@@ -49,14 +49,14 @@ static void *output_thread(void *userdata) {
         int res = ioctl(encp->fd, VIDIOC_DQBUF, &buf);
         if (res != 0) {
             fprintf(stderr, "output_thread(): ioctl(VIDIOC_DQBUF, V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE) failed\n");
-            exit(1);
+            continue;
         }
 
         buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE;
         res = ioctl(encp->fd, VIDIOC_DQBUF, &buf);
         if (res != 0) {
             fprintf(stderr, "output_thread(): ioctl(VIDIOC_DQBUF, V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE) failed\n");
-            exit(1);
+            continue;
         }
 
         const uint8_t *mapped = (const uint8_t *)encp->capture_buffers[buf.index];
@@ -68,7 +68,7 @@ static void *output_thread(void *userdata) {
         res = ioctl(encp->fd, VIDIOC_QBUF, &buf);
         if (res != 0) {
             fprintf(stderr, "output_thread(): ioctl(VIDIOC_QBUF) failed\n");
-            exit(1);
+            continue;
         }
     }
 
