@@ -264,7 +264,7 @@ failed:
     return false;
 }
 
-void encoder_hard_h264_encode(encoder_hard_h264_t *enc, uint8_t *mapped, int fd, size_t size, uint64_t ts) {
+void encoder_hard_h264_encode(encoder_hard_h264_t *enc, uint8_t *buffer_mapped, int buffer_fd, size_t buffer_size, uint64_t timestamp) {
     encoder_hard_h264_priv_t *encp = (encoder_hard_h264_priv_t *)enc;
 
     int index = encp->cur_buffer++;
@@ -277,12 +277,12 @@ void encoder_hard_h264_encode(encoder_hard_h264_t *enc, uint8_t *mapped, int fd,
     buf.field = V4L2_FIELD_NONE;
     buf.memory = V4L2_MEMORY_DMABUF;
     buf.length = 1;
-    buf.timestamp.tv_sec = ts / 1000000;
-    buf.timestamp.tv_usec = ts % 1000000;
+    buf.timestamp.tv_sec = timestamp / 1000000;
+    buf.timestamp.tv_usec = timestamp % 1000000;
     buf.m.planes = planes;
-    buf.m.planes[0].m.fd = fd;
-    buf.m.planes[0].bytesused = size;
-    buf.m.planes[0].length = size;
+    buf.m.planes[0].m.fd = buffer_fd;
+    buf.m.planes[0].bytesused = buffer_size;
+    buf.m.planes[0].length = buffer_size;
     int res = ioctl(encp->fd, VIDIOC_QBUF, &buf);
     if (res != 0) {
         fprintf(stderr, "encoder_hard_h264_encode(): ioctl(VIDIOC_QBUF) failed\n");

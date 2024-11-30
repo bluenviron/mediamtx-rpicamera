@@ -97,10 +97,10 @@ failed:
     return false;
 }
 
-void encoder_soft_h264_encode(encoder_soft_h264_t *enc, uint8_t *mapped, int fd, size_t size, uint64_t ts) {
+void encoder_soft_h264_encode(encoder_soft_h264_t *enc, uint8_t *buffer_mapped, int buffer_fd, size_t buffer_size, uint64_t timestamp) {
     encoder_soft_h264_priv_t *encp = (encoder_soft_h264_priv_t *)enc;
 
-    encp->x_pic_in.img.plane[0] = mapped; // Y
+    encp->x_pic_in.img.plane[0] = buffer_mapped; // Y
     encp->x_pic_in.img.plane[1] = encp->x_pic_in.img.plane[0] + encp->x_pic_in.img.i_stride[0] * encp->params->height; // U
     encp->x_pic_in.img.plane[2] = encp->x_pic_in.img.plane[1] + (encp->x_pic_in.img.i_stride[0] / 2) * (encp->params->height / 2); // V
     encp->x_pic_in.i_pts = encp->next_pts++;
@@ -113,7 +113,7 @@ void encoder_soft_h264_encode(encoder_soft_h264_t *enc, uint8_t *mapped, int fd,
 
     pthread_mutex_unlock(&encp->mutex);
 
-    encp->output_cb(nal->p_payload, frame_size, ts);
+    encp->output_cb(nal->p_payload, frame_size, timestamp);
 }
 
 void encoder_soft_h264_reload_params(encoder_soft_h264_t *enc, const parameters_t *params) {
