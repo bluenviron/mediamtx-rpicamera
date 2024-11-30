@@ -11,12 +11,18 @@ typedef void (*camera_frame_cb)(
     uint64_t size,
     uint64_t timestamp);
 
+typedef void (*camera_error_cb)();
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 const char *camera_get_error();
-bool camera_create(const parameters_t *params, camera_frame_cb frame_cb, camera_t **cam);
+bool camera_create(
+    const parameters_t *params,
+    camera_frame_cb frame_cb,
+    camera_error_cb error_cb,
+    camera_t **cam);
 int camera_get_stride(camera_t *cam);
 int camera_get_colorspace(camera_t *cam);
 bool camera_start(camera_t *cam);
