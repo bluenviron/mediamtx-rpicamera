@@ -6,9 +6,9 @@
 typedef void camera_t;
 
 typedef void (*camera_frame_cb)(
-    uint8_t *mapped_buffer,
+    uint8_t *buffer_mapped,
     int buffer_fd,
-    uint64_t size,
+    uint64_t buffer_size,
     uint64_t timestamp);
 
 typedef void (*camera_error_cb)();

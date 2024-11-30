@@ -106,8 +106,6 @@ struct CameraPriv {
     std::unique_ptr<ControlList> ctrls;
     std::vector<std::unique_ptr<FrameBuffer>> frame_buffers;
     std::map<FrameBuffer *, uint8_t *> mapped_buffers;
-    bool ts_initialized;
-    uint64_t ts_start;
     bool in_error;
 };
 
@@ -248,6 +246,7 @@ bool camera_create(
     // this improves performance by a lot.
     // https://forums.raspberrypi.com/viewtopic.php?t=352554
     // https://github.com/raspberrypi/rpicam-apps/blob/6de1ab6a899df35f929b2a15c0831780bd8e750e/core/rpicam_app.cpp#L1012
+
     int allocator_fd = create_dma_allocator();
     if (allocator_fd < 0) {
         set_error("failed to open dma heap allocator");
@@ -322,19 +321,11 @@ static void on_request_complete(Request *request) {
 
     FrameBuffer *buffer = request->buffers().at(camp->video_stream);
 
-    uint64_t ts = buffer->metadata().timestamp / 1000;
-
-    if (!camp->ts_initialized) {
-        camp->ts_initialized = true;
-        camp->ts_start = ts;
-    }
-    ts -= camp->ts_start;
-
     camp->frame_cb(
         camp->mapped_buffers.at(buffer),
         buffer->planes()[0].fd.get(),
         buffer_size(buffer->planes()),
-        ts);
+        buffer->metadata().timestamp / 1000);
 
     request->reuse(Request::ReuseFlag::ReuseBuffers);
 
