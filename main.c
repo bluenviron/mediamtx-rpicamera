@@ -17,6 +17,7 @@
 
 static int pipe_out_fd;
 static pthread_mutex_t pipe_out_mutex;
+static camera_t *cam;
 static text_t *text;
 static encoder_t *enc;
 
@@ -51,6 +52,29 @@ static void on_error() {
     pthread_mutex_unlock(&pipe_out_mutex);
 }
 
+static bool handle_command(const uint8_t *buf, uint32_t size) {
+    switch (buf[0]) {
+    case 'e':
+        return false;
+
+    case 'c':
+        {
+            parameters_t params;
+            bool ok = parameters_unserialize(&params, &buf[1], size-1);
+            if (!ok) {
+                printf("skipping reloading parameters since they are invalid: %s\n", parameters_get_error());
+                return true;
+            }
+
+            camera_reload_params(cam, &params);
+            encoder_reload_params(enc, &params);
+            parameters_destroy(&params);
+        }
+    }
+
+    return true;
+}
+
 int main() {
     if (getenv("TEST") != NULL) {
         printf("test passed\n");
@@ -74,7 +98,6 @@ int main() {
     pthread_mutex_init(&pipe_out_mutex, NULL);
     pthread_mutex_lock(&pipe_out_mutex);
 
-    camera_t *cam;
     ok = camera_create(
         &params,
         on_frame,
@@ -116,26 +139,13 @@ int main() {
 
     while (true) {
         uint8_t *buf;
-        uint32_t n = pipe_read(pipe_in_fd, &buf);
+        uint32_t size = pipe_read(pipe_in_fd, &buf);
 
-        switch (buf[0]) {
-        case 'e':
-            return 0;
+        bool ok = handle_command(buf, size);
+        free(buf);
 
-        case 'c':
-            {
-                parameters_t params;
-                bool ok = parameters_unserialize(&params, &buf[1], n-1);
-                free(buf);
-                if (!ok) {
-                    printf("skipping reloading parameters since they are invalid: %s\n", parameters_get_error());
-                    continue;
-                }
-
-                camera_reload_params(cam, &params);
-                encoder_reload_params(enc, &params);
-                parameters_destroy(&params);
-            }
+        if (!ok) {
+            break;
         }
     }
 
