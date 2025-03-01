@@ -46,7 +46,7 @@ export DOCKERFILE_BUILD_32
 build_32: enable_multiarch
 	echo "$$DOCKERFILE_BUILD_32" | docker build . -f - -t build32
 	mkdir -p build
-	docker run --rm -v $(PWD):/o build32 sh -c "rm -rf /o/build/mtxrpicam_32 && mv /s/build/mtxrpicam_32 /o/build/"
+	docker run --rm -v $(shell pwd):/o build32 sh -c "rm -rf /o/build/mtxrpicam_32 && mv /s/build/mtxrpicam_32 /o/build/"
 
 define DOCKERFILE_BUILD_64
 FROM multiarch/qemu-user-static:x86_64-aarch64 AS qemu
@@ -74,7 +74,7 @@ export DOCKERFILE_BUILD_64
 build_64: enable_multiarch
 	echo "$$DOCKERFILE_BUILD_64" | docker build . -f - -t build64
 	mkdir -p build
-	docker run --rm -v $(PWD):/o build64 sh -c "rm -rf /o/build/mtxrpicam_64 && mv /s/build/mtxrpicam_64 /o/build/"
+	docker run --rm -v $(shell pwd):/o build64 sh -c "rm -rf /o/build/mtxrpicam_64 && mv /s/build/mtxrpicam_64 /o/build/"
 
 define DOCKERFILE_TEST_BULLSEYE_32
 FROM multiarch/qemu-user-static:x86_64-arm AS qemu
@@ -85,7 +85,7 @@ export DOCKERFILE_TEST_BULLSEYE_32
 
 test_bullseye_32: enable_multiarch
 	echo "$$DOCKERFILE_TEST_BULLSEYE_32" | docker build . -f - -t test_bullseye_32
-	docker run --rm --platform=linux/arm/v6 -v $(PWD):/s -w /s/build/mtxrpicam_32 test_bullseye_32 bash -c "LD_LIBRARY_PATH=. TEST=1 ./mtxrpicam"
+	docker run --rm --platform=linux/arm/v6 -v $(shell pwd):/s -w /s/build/mtxrpicam_32 test_bullseye_32 bash -c "LD_LIBRARY_PATH=. TEST=1 ./mtxrpicam"
 
 define DOCKERFILE_TEST_BULLSEYE_64
 FROM multiarch/qemu-user-static:x86_64-aarch64 AS qemu
@@ -96,7 +96,7 @@ export DOCKERFILE_TEST_BULLSEYE_64
 
 test_bullseye_64: enable_multiarch
 	echo "$$DOCKERFILE_TEST_BULLSEYE_64" | docker build . -f - -t test_bullseye_64
-	docker run --rm --platform=linux/arm64/v8 -v $(PWD):/s -w /s/build/mtxrpicam_64 test_bullseye_64 bash -c "LD_LIBRARY_PATH=. TEST=1 ./mtxrpicam"
+	docker run --rm --platform=linux/arm64/v8 -v $(shell pwd):/s -w /s/build/mtxrpicam_64 test_bullseye_64 bash -c "LD_LIBRARY_PATH=. TEST=1 ./mtxrpicam"
 
 define DOCKERFILE_TEST_BOOKWORM_32
 FROM multiarch/qemu-user-static:x86_64-arm AS qemu
@@ -107,7 +107,7 @@ export DOCKERFILE_TEST_BOOKWORM_32
 
 test_bookworm_32: enable_multiarch
 	echo "$$DOCKERFILE_TEST_BOOKWORM_32" | docker build . -f - -t test_bookworm_32
-	docker run --rm --platform=linux/arm/v6 -v $(PWD):/s -w /s/build/mtxrpicam_32 test_bookworm_32 bash -c "LD_LIBRARY_PATH=. TEST=1 ./mtxrpicam"
+	docker run --rm --platform=linux/arm/v6 -v $(shell pwd):/s -w /s/build/mtxrpicam_32 test_bookworm_32 bash -c "LD_LIBRARY_PATH=. TEST=1 ./mtxrpicam"
 
 define DOCKERFILE_TEST_BOOKWORM_64
 FROM multiarch/qemu-user-static:x86_64-aarch64 AS qemu
@@ -118,4 +118,4 @@ export DOCKERFILE_TEST_BOOKWORM_64
 
 test_bookworm_64: enable_multiarch
 	echo "$$DOCKERFILE_TEST_BOOKWORM_64" | docker build . -f - -t test_bookworm_64
-	docker run --rm --platform=linux/arm64/v8 -v $(PWD):/s -w /s/build/mtxrpicam_64 test_bookworm_64 bash -c "LD_LIBRARY_PATH=. TEST=1 ./mtxrpicam"
+	docker run --rm --platform=linux/arm64/v8 -v $(shell pwd):/s -w /s/build/mtxrpicam_64 test_bookworm_64 bash -c "LD_LIBRARY_PATH=. TEST=1 ./mtxrpicam"
