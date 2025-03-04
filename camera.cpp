@@ -118,6 +118,16 @@ static void set_hdr(bool hdr) {
     }
 }
 
+// https://github.com/raspberrypi/rpicam-apps/blob/74abee8f2de519fed9cb88d39473d1dd4cf50b62/core/rpicam_app.hpp#L176
+static std::vector<std::shared_ptr<Camera>> get_cameras(const CameraManager *camera_manager) {
+    std::vector<std::shared_ptr<Camera>> cameras = camera_manager->cameras();
+    auto rem = std::remove_if(cameras.begin(), cameras.end(),
+        [](auto &cam) { return cam->id().find("/usb") != std::string::npos; });
+    cameras.erase(rem, cameras.end());
+    std::sort(cameras.begin(), cameras.end(), [](auto l, auto r) { return l->id() > r->id(); });
+    return cameras;
+}
+
 struct CameraPriv {
     const parameters_t *params;
     camera_frame_cb frame_cb;
@@ -162,10 +172,7 @@ bool camera_create(
         return false;
     }
 
-    std::vector<std::shared_ptr<Camera>> cameras = camp->camera_manager->cameras();
-    auto rem = std::remove_if(cameras.begin(), cameras.end(),
-        [](auto &cam) { return cam->id().find("/usb") != std::string::npos; });
-    cameras.erase(rem, cameras.end());
+    std::vector<std::shared_ptr<Camera>> cameras = get_cameras(camp->camera_manager.get());
     if (params->camera_id >= cameras.size()){
         set_error("selected camera is not available");
         return false;
