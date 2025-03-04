@@ -46,22 +46,6 @@ namespace controls = libcamera::controls;
 namespace formats = libcamera::formats;
 namespace properties = libcamera::properties;
 
-static const char *heap_positions[] = {
-    "/dev/dma_heap/vidbuf_cached",
-    "/dev/dma_heap/linux,cma",
-};
-
-// https://github.com/raspberrypi/rpicam-apps/blob/6de1ab6a899df35f929b2a15c0831780bd8e750e/core/dma_heaps.cpp
-static int create_dma_allocator() {
-    for (unsigned int i = 0; i < sizeof(heap_positions) / sizeof(const char *); i++) {
-        int fd = open(heap_positions[i], O_RDWR | O_CLOEXEC, 0);
-        if (fd >= 0) {
-            return fd;
-        }
-    }
-    return -1;
-}
-
 static char errbuf[256];
 
 static void set_error(const char *format, ...) {
@@ -72,6 +56,22 @@ static void set_error(const char *format, ...) {
 
 const char *camera_get_error() {
     return errbuf;
+}
+
+// https://github.com/raspberrypi/rpicam-apps/blob/6de1ab6a899df35f929b2a15c0831780bd8e750e/core/dma_heaps.cpp
+static int create_dma_allocator() {
+    static const char *heap_positions[] = {
+        "/dev/dma_heap/vidbuf_cached",
+        "/dev/dma_heap/linux,cma",
+    };
+
+    for (unsigned int i = 0; i < sizeof(heap_positions) / sizeof(const char *); i++) {
+        int fd = open(heap_positions[i], O_RDWR | O_CLOEXEC, 0);
+        if (fd >= 0) {
+            return fd;
+        }
+    }
+    return -1;
 }
 
 // https://github.com/raspberrypi/libcamera-apps/blob/dd97618a25523c2c4aa58f87af5f23e49aa6069c/core/libcamera_app.cpp#L42
@@ -93,21 +93,6 @@ static PixelFormat mode_to_pixel_format(sensor_mode_t *mode) {
 
     return formats::SBGGR12_CSI2P;
 }
-
-struct CameraPriv {
-    const parameters_t *params;
-    camera_frame_cb frame_cb;
-    camera_error_cb error_cb;
-    std::unique_ptr<CameraManager> camera_manager;
-    std::shared_ptr<Camera> camera;
-    Stream *video_stream;
-    std::vector<std::unique_ptr<Request>> requests;
-    std::mutex ctrls_mutex;
-    std::unique_ptr<ControlList> ctrls;
-    std::vector<std::unique_ptr<FrameBuffer>> frame_buffers;
-    std::map<FrameBuffer *, uint8_t *> mapped_buffers;
-    bool in_error;
-};
 
 static int get_v4l2_colorspace(std::optional<ColorSpace> const &cs) {
     if (cs == ColorSpace::Rec709) {
@@ -132,6 +117,21 @@ static void set_hdr(bool hdr) {
         close(fd);
     }
 }
+
+struct CameraPriv {
+    const parameters_t *params;
+    camera_frame_cb frame_cb;
+    camera_error_cb error_cb;
+    std::unique_ptr<CameraManager> camera_manager;
+    std::shared_ptr<Camera> camera;
+    Stream *video_stream;
+    std::vector<std::unique_ptr<Request>> requests;
+    std::mutex ctrls_mutex;
+    std::unique_ptr<ControlList> ctrls;
+    std::vector<std::unique_ptr<FrameBuffer>> frame_buffers;
+    std::map<FrameBuffer *, uint8_t *> mapped_buffers;
+    bool in_error;
+};
 
 bool camera_create(
     const parameters_t *params,

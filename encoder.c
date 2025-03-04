@@ -29,12 +29,6 @@ typedef void (*encode_cb)(void *enc, uint8_t *mapped_buffer, int buffer_fd, size
 
 typedef void (*reload_params_cb)(void *enc, const parameters_t *params);
 
-typedef struct {
-    void *implementation;
-    encode_cb encode;
-    reload_params_cb reload_params;
-} encoder_priv_t;
-
 static bool supports_hardware_h264() {
     int fd = open(ENCODER_HARD_H264_DEVICE, O_RDWR, 0);
     if (fd < 0) {
@@ -56,6 +50,12 @@ static bool supports_hardware_h264() {
 
     return false;
 }
+
+typedef struct {
+    void *implementation;
+    encode_cb encode;
+    reload_params_cb reload_params;
+} encoder_priv_t;
 
 bool encoder_create(const parameters_t *params, int stride, int colorspace, encoder_output_cb output_cb, encoder_t **enc) {
     *enc = malloc(sizeof(encoder_priv_t));
