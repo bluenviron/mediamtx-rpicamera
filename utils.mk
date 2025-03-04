@@ -1,7 +1,7 @@
-BULLSEYE_32_IMAGE = balenalib/raspberry-pi:bullseye-run-20240508
-BULLSEYE_64_IMAGE = balenalib/raspberrypi3-64:bullseye-run-20240429
-BOOKWORM_32_IMAGE = balenalib/raspberry-pi:bookworm-run-20240527
-BOOKWORM_64_IMAGE = balenalib/raspberrypi3-64:bookworm-run-20240429
+BULLSEYE_32_IMAGE = balenalib/raspberry-pi:bullseye-run-20250301
+BULLSEYE_64_IMAGE = balenalib/raspberrypi3-64:bullseye-run-20250301
+BOOKWORM_32_IMAGE = balenalib/raspberry-pi:bookworm-run-20250301
+BOOKWORM_64_IMAGE = balenalib/raspberrypi3-64:bookworm-run-20250301
 
 help:
 	@echo "usage: make [action]"
