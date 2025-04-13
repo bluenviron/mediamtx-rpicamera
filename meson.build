@@ -83,10 +83,13 @@ if not freetype_dep.found()
     freetype_dep = freetype_proj.dependency('freetype')
 endif
 
+libjpeg_dep = dependency('libjpeg', version: '<3.0.0', static : true)
+
 dependencies = [
     x264_dep,
     libcamera_dep,
-    freetype_dep
+    freetype_dep,
+    libjpeg_dep
 ]
 
 text_font = custom_target(
@@ -99,6 +102,7 @@ sources = [
     'base64.c',
     'camera.cpp',
     'encoder_hard_h264.c',
+    'encoder_jpeg.c',
     'encoder_soft_h264.c',
     'encoder.c',
     'main.c',

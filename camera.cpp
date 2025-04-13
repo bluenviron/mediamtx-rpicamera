@@ -58,6 +58,20 @@ const char *camera_get_error() {
     return errbuf;
 }
 
+static long timespec_sub(struct timespec *a, struct timespec *b) {
+    return ((a->tv_sec * 1000000000L) + a->tv_nsec) -
+        ((b->tv_sec * 1000000000L) + b->tv_nsec);
+}
+
+static void timespec_add(struct timespec *a, long nanosecs) {
+    a->tv_nsec += nanosecs;
+
+    while (a->tv_nsec > 1000000000L) {
+        a->tv_sec++;
+        a->tv_nsec -= 1000000000L;
+    }
+};
+
 // https://github.com/raspberrypi/rpicam-apps/blob/6de1ab6a899df35f929b2a15c0831780bd8e750e/core/dma_heaps.cpp
 static int create_dma_allocator() {
     static const char *heap_positions[] = {
@@ -132,14 +146,17 @@ struct CameraPriv {
     const parameters_t *params;
     camera_frame_cb frame_cb;
     camera_error_cb error_cb;
+    long secondary_deltat;
     std::unique_ptr<CameraManager> camera_manager;
     std::shared_ptr<Camera> camera;
     Stream *video_stream;
+    Stream *secondary_stream;
     std::vector<std::unique_ptr<Request>> requests;
     std::mutex ctrls_mutex;
     std::unique_ptr<ControlList> ctrls;
     std::vector<std::unique_ptr<FrameBuffer>> frame_buffers;
     std::map<FrameBuffer *, uint8_t *> mapped_buffers;
+    struct timespec last_secondary_frame_time;
     bool in_error;
 };
 
@@ -194,6 +211,9 @@ bool camera_create(
     if (params->mode != NULL) {
         stream_roles.push_back(StreamRole::Raw);
     }
+    if (params->secondary_width != 0) {
+        stream_roles.push_back(StreamRole::Viewfinder);
+    }
 
     std::unique_ptr<CameraConfiguration> conf = camp->camera->generateConfiguration(stream_roles);
     if (conf == NULL) {
@@ -201,7 +221,9 @@ bool camera_create(
         return false;
     }
 
-    StreamConfiguration &video_stream_conf = conf->at(0);
+    int cur_stream = 0;
+
+    StreamConfiguration &video_stream_conf = conf->at(cur_stream++);
     video_stream_conf.size = Size(params->width, params->height);
     video_stream_conf.pixelFormat = formats::YUV420;
     video_stream_conf.bufferCount = params->buffer_count;
@@ -212,10 +234,17 @@ bool camera_create(
     }
 
     if (params->mode != NULL) {
-        StreamConfiguration &raw_stream_conf = conf->at(1);
+        StreamConfiguration &raw_stream_conf = conf->at(cur_stream++);
         raw_stream_conf.size = Size(params->mode->width, params->mode->height);
         raw_stream_conf.pixelFormat = mode_to_pixel_format(params->mode);
         raw_stream_conf.bufferCount = video_stream_conf.bufferCount;
+    }
+
+    if (params->secondary_width != 0) {
+        StreamConfiguration &secondary_stream_conf = conf->at(cur_stream++);
+        secondary_stream_conf.size = Size(params->secondary_width, params->secondary_height);
+        secondary_stream_conf.bufferCount = video_stream_conf.bufferCount;
+        secondary_stream_conf.pixelFormat = formats::YUV420;
     }
 
     conf->orientation = Orientation::Rotate0;
@@ -239,6 +268,11 @@ bool camera_create(
     }
 
     camp->video_stream = video_stream_conf.stream();
+
+    if (params->secondary_width != 0) {
+        StreamConfiguration &secondary_stream_conf = conf->at(cur_stream - 1);
+        camp->secondary_stream = secondary_stream_conf.stream();
+    }
 
     for (unsigned int i = 0; i < params->buffer_count; i++) {
         std::unique_ptr<Request> request = camp->camera->createRequest((uint64_t)camp.get());
@@ -282,8 +316,7 @@ bool camera_create(
             camp->frame_buffers.push_back(std::make_unique<FrameBuffer>(plane));
             FrameBuffer *fb = camp->frame_buffers.back().get();
 
-            // map buffers of the video stream only
-            if (stream == video_stream_conf.stream()) {
+            if (stream == camp->video_stream || stream == camp->secondary_stream) {
                 camp->mapped_buffers[fb] = (uint8_t*)mmap(NULL, stream_conf.frameSize, PROT_READ | PROT_WRITE, MAP_SHARED, plane[0].fd.get(), 0);
             }
 
@@ -300,6 +333,8 @@ bool camera_create(
     camp->params = params;
     camp->frame_cb = frame_cb;
     camp->error_cb = error_cb;
+    camp->secondary_deltat = (long)(1000000000.0 / params->secondary_fps);
+    clock_gettime(CLOCK_MONOTONIC, &camp->last_secondary_frame_time);
     *cam = camp.release();
 
     return true;
@@ -328,11 +363,26 @@ static void on_request_complete(Request *request) {
 
     FrameBuffer *buffer = request->buffers().at(camp->video_stream);
 
+    uint8_t *secondary_buffer_mapped = NULL;
+    if (camp->secondary_stream != NULL) {
+        struct timespec now;
+        clock_gettime(CLOCK_MONOTONIC, &now);
+
+        long diff = timespec_sub(&now, &camp->last_secondary_frame_time);
+
+        if (diff >= camp->secondary_deltat) {
+            timespec_add(&camp->last_secondary_frame_time, camp->secondary_deltat);
+            FrameBuffer *secondary_buffer = request->buffers().at(camp->secondary_stream);
+            secondary_buffer_mapped = camp->mapped_buffers.at(secondary_buffer);
+        }
+    }
+
     camp->frame_cb(
         camp->mapped_buffers.at(buffer),
         buffer->planes()[0].fd.get(),
         buffer_size(buffer->planes()),
-        buffer->metadata().timestamp / 1000);
+        buffer->metadata().timestamp / 1000,
+        secondary_buffer_mapped);
 
     request->reuse(Request::ReuseFlag::ReuseBuffers);
 
@@ -348,6 +398,11 @@ static void on_request_complete(Request *request) {
 int camera_get_stride(camera_t *cam) {
     CameraPriv *camp = (CameraPriv *)cam;
     return camp->video_stream->configuration().stride;
+}
+
+int camera_get_secondary_stride(camera_t *cam) {
+    CameraPriv *camp = (CameraPriv *)cam;
+    return camp->secondary_stream->configuration().stride;
 }
 
 int camera_get_colorspace(camera_t *cam) {

@@ -14,18 +14,21 @@
 #include "camera.h"
 #include "text.h"
 #include "encoder.h"
+#include "encoder_jpeg.h"
 
 static int pipe_out_fd;
 static pthread_mutex_t pipe_out_mutex;
 static camera_t *cam;
 static text_t *text;
 static encoder_t *enc;
+static encoder_jpeg_t *enc_jpeg = NULL;
 
 static void on_frame(
     uint8_t *buffer_mapped,
     int buffer_fd,
     uint64_t buffer_size,
-    uint64_t timestamp) {
+    uint64_t timestamp,
+    uint8_t *secondary_buffer_mapped) {
     // mapped DMA buffers require a DMA_BUF_IOCTL_SYNC before and after usage.
     // https://forums.raspberrypi.com/viewtopic.php?t=352554
     struct dma_buf_sync dma_sync = {0};
@@ -38,11 +41,21 @@ static void on_frame(
     ioctl(buffer_fd, DMA_BUF_IOCTL_SYNC, &dma_sync);
 
     encoder_encode(enc, buffer_mapped, buffer_fd, buffer_size, timestamp);
+
+    if (enc_jpeg != NULL && secondary_buffer_mapped != NULL) {
+        encoder_jpeg_encode(enc_jpeg, secondary_buffer_mapped, timestamp);
+    }
 }
 
 static void on_encoder_output(const uint8_t *buffer_mapped, uint64_t buffer_size, uint64_t timestamp) {
     pthread_mutex_lock(&pipe_out_mutex);
-    pipe_write_buf(pipe_out_fd, buffer_mapped, buffer_size, timestamp);
+    pipe_write_data(pipe_out_fd, buffer_mapped, buffer_size, timestamp);
+    pthread_mutex_unlock(&pipe_out_mutex);
+}
+
+static void on_jpeg_output(const uint8_t *buf, uint64_t size, uint64_t ts) {
+    pthread_mutex_lock(&pipe_out_mutex);
+    pipe_write_secondary_data(pipe_out_fd, buf, size, ts);
     pthread_mutex_unlock(&pipe_out_mutex);
 }
 
@@ -126,6 +139,20 @@ int main() {
     if (!ok) {
         pipe_write_error(pipe_out_fd, "encoder_create(): %s", encoder_get_error());
         return -1;
+    }
+
+    if (params.secondary_width != 0) {
+        ok = encoder_jpeg_create(
+            params.secondary_width,
+            params.secondary_height,
+            params.secondary_quality,
+            camera_get_secondary_stride(cam),
+            on_jpeg_output,
+            &enc_jpeg);
+        if (!ok) {
+            pipe_write_error(pipe_out_fd, "encoder_jpeg_create(): %s", encoder_jpeg_get_error());
+            return -1;
+        }
     }
 
     ok = camera_start(cam);
