@@ -76,7 +76,7 @@ static int create_dma_allocator() {
 
 // https://github.com/raspberrypi/libcamera-apps/blob/dd97618a25523c2c4aa58f87af5f23e49aa6069c/core/libcamera_app.cpp#L42
 static PixelFormat mode_to_pixel_format(sensor_mode_t *mode) {
-    static std::vector<std::pair<std::pair<int, bool>, PixelFormat>> table = {
+    static std::vector<std::pair<std::pair<unsigned int, bool>, PixelFormat>> table = {
         { {8, false}, formats::SBGGR8 },
         { {8, true}, formats::SBGGR8 },
         { {10, false}, formats::SBGGR10 },

@@ -4,9 +4,9 @@
 #include <stdbool.h>
 
 typedef struct {
-    int width;
-    int height;
-    int bit_depth;
+    unsigned int width;
+    unsigned int height;
+    unsigned int bit_depth;
     bool packed;
 } sensor_mode_t;
 
