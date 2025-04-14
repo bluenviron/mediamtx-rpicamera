@@ -6,3 +6,4 @@
 !/subprojects/x264.wrap
 !/subprojects/libpisp.wrap
 !/subprojects/openssl.wrap
+!/subprojects/libjpeg-turbo.wrap

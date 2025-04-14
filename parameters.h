@@ -45,6 +45,10 @@ typedef struct {
     unsigned int bitrate;
     unsigned int profile;
     unsigned int level;
+    unsigned int secondary_width;
+    unsigned int secondary_height;
+    float secondary_fps;
+    unsigned int secondary_quality;
 
     // private
     unsigned int buffer_count;

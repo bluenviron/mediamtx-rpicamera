@@ -25,8 +25,17 @@ void pipe_write_ready(int fd) {
     write(fd, buf, n);
 }
 
-void pipe_write_buf(int fd, const uint8_t *mapped, uint32_t size, uint64_t ts) {
-    char head[] = {'b'};
+void pipe_write_data(int fd, const uint8_t *mapped, uint32_t size, uint64_t ts) {
+    char head[] = {'d'};
+    size += 1 + sizeof(uint64_t);
+    write(fd, &size, 4);
+    write(fd, head, 1);
+    write(fd, &ts, sizeof(uint64_t));
+    write(fd, mapped, size - 1 - sizeof(uint64_t));
+}
+
+void pipe_write_secondary_data(int fd, const uint8_t *mapped, uint32_t size, uint64_t ts) {
+    char head[] = {'s'};
     size += 1 + sizeof(uint64_t);
     write(fd, &size, 4);
     write(fd, head, 1);

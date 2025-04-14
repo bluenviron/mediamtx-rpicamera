@@ -154,6 +154,14 @@ bool parameters_unserialize(parameters_t *params, const uint8_t *buf, size_t buf
                 params->level = V4L2_MPEG_VIDEO_H264_LEVEL_4_2;
             }
             free(decoded_val);
+        } else if (strcmp(key, "SecondaryWidth") == 0) {
+            params->secondary_width = atoi(val);
+        } else if (strcmp(key, "SecondaryHeight") == 0) {
+            params->secondary_height = atoi(val);
+        } else if (strcmp(key, "SecondaryFPS") == 0) {
+            params->secondary_fps = atof(val);
+        } else if (strcmp(key, "SecondaryQuality") == 0) {
+            params->secondary_quality = atoi(val);
         }
     }
 
