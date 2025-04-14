@@ -99,8 +99,9 @@ This is embedded into all MediaMTX releases and shouldn't normally be downloaded
 
 ## License
 
-All the code in this repository is released under the [MIT License](LICENSE). Compiled binaries make use of some third-party dependencies:
+All the code in this repository is released under the [MIT License](LICENSE). Compiled binaries include or make use of some third-party dependencies:
 
 * libcamera, released under the [MIT license](https://git.libcamera.org/libcamera/libcamera.git/tree/LICENSES)
 * freetype, released under the [FreeType license](https://github.com/freetype/freetype/blob/master/LICENSE.TXT)
 * x264, released under the [GPL v2](https://gitlab.freedesktop.org/gstreamer/meson-ports/x264/-/blob/meson/COPYING)
+* libjpeg-turbo, released under a [Modified 3-clause BSD License](https://github.com/libjpeg-turbo/libjpeg-turbo?tab=License-1-ov-file#the-modified-3-clause-bsd-license)
