@@ -1,3 +1,4 @@
+#include <sys/time.h>
 #include <time.h>
 
 #include <ft2build.h>
@@ -17,6 +18,43 @@ static void set_error(const char *format, ...) {
 
 const char *text_get_error() {
     return errbuf;
+}
+
+static void str_replace(char *buffer, size_t bufsize, const char *find, const char *replace) {
+    char *ptr = strstr(buffer, find);
+    if (ptr != NULL) {
+        int64_t find_len = strlen(find);
+        int64_t replace_len = strlen(replace);
+        int64_t after_len = strlen(ptr + find_len);
+
+        int64_t avail1 = bufsize - (ptr - buffer) - 1;
+        if (replace_len > avail1) {
+            replace_len = avail1;
+        }
+
+        int64_t avail2 = avail1 - replace_len;
+        if (avail2 <= 0) {
+            after_len = 0;
+        } else if (after_len > avail2) {
+            after_len = avail2;
+        }
+
+        char tmp[256];
+        memcpy(tmp, ptr + find_len, after_len);
+        memcpy(ptr, replace, replace_len);
+        memcpy(ptr + replace_len, tmp, after_len);
+        ptr[replace_len + after_len] = 0x00;
+    }
+}
+
+static void extended_strftime(char *buffer, size_t bufsize, const char *format, const struct timeval *time) {
+    struct tm *tm_info = localtime(&time->tv_sec);
+    strftime(buffer, bufsize, format, tm_info);
+
+    char str_usec[7];
+    sprintf(str_usec, "%.6ld", time->tv_usec);
+
+    str_replace(buffer, bufsize, "%f", str_usec);
 }
 
 typedef struct {
@@ -138,11 +176,11 @@ void text_draw(text_t *text, uint8_t *buf) {
     text_priv_t *textp = (text_priv_t *)text;
 
     if (textp->enabled) {
-        time_t timer = time(NULL);
-        struct tm *tm_info = localtime(&timer);
-        char buffer[255];
-        memset(buffer, 0, sizeof(buffer));
-        strftime(buffer, 255, textp->text_overlay, tm_info);
+        struct timeval now;
+        gettimeofday(&now, NULL);
+
+        char buffer[256];
+        extended_strftime(buffer, 256, textp->text_overlay, &now);
 
         draw_rect(
             buf,
