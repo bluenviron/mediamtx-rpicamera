@@ -1,19 +1,19 @@
 diff --git a/.tarball_version b/.tarball_version
 new file mode 100644
-index 00000000..d5df1ce3
+index 00000000..2a1cd140
 --- /dev/null
 +++ b/.tarball_version
 @@ -0,0 +1 @@
-+0.3.0+mediamtx
++0.5.0+mediamtx
 diff --git a/meson.build b/meson.build
-index 94f35fcc..38ca08ee 100644
+index 9ba5e2ca..2977ab6e 100644
 --- a/meson.build
 +++ b/meson.build
 @@ -2,7 +2,7 @@
- 
+
  project('libcamera', 'c', 'cpp',
      meson_version : '>= 0.63',
--    version : '0.4.0',
+-    version : '0.5.0',
 +    version : '9.9.9',
      default_options : [
          'werror=true',
@@ -25,35 +25,35 @@ index 0ad4631d..101b41ad 100644
 @@ -8,12 +8,9 @@ ipa_install_dir = libcamera_libdir
  ipa_data_dir = libcamera_datadir / 'ipa'
  ipa_sysconf_dir = libcamera_sysconfdir / 'ipa'
- 
+
 -config_h.set('IPA_CONFIG_DIR',
 -             '"' + get_option('prefix') / ipa_sysconf_dir +
 -             ':' + get_option('prefix') / ipa_data_dir + '"')
 +config_h.set('IPA_CONFIG_DIR', '"./ipa_conf"')
- 
+
 -config_h.set('IPA_MODULE_DIR',
 -             '"' + get_option('prefix') / ipa_install_dir + '"')
 +config_h.set('IPA_MODULE_DIR', '"./ipa_module"')
- 
+
  summary({
           'IPA_CONFIG_DIR' : config_h.get('IPA_CONFIG_DIR'),
 diff --git a/src/libcamera/meson.build b/src/libcamera/meson.build
-index 4eaa1c8e..2fc16acf 100644
+index cae7e5c0..3f119aff 100644
 --- a/src/libcamera/meson.build
 +++ b/src/libcamera/meson.build
-@@ -63,7 +63,7 @@ includes = [
- 
+@@ -64,7 +64,7 @@ includes = [
+
  libcamera_deps = []
- 
+
 -libatomic = cc.find_library('atomic', required : false)
 +libatomic = cc.find_library('atomic', required : true, static : true)
  libthreads = dependency('threads')
- 
+
  subdir('base')
-@@ -84,24 +84,9 @@ endif
+@@ -85,24 +85,9 @@ endif
  libudev = dependency('libudev', required : get_option('udev'))
  libyaml = dependency('yaml-0.1', required : false)
- 
+
 -# Use one of gnutls or libcrypto (provided by OpenSSL), trying gnutls first.
 -libcrypto = dependency('gnutls', required : false)
 -if libcrypto.found()
@@ -75,7 +75,7 @@ index 4eaa1c8e..2fc16acf 100644
 +libcrypto_proj = subproject('openssl', default_options : [ 'default_library=static' ])
 +libcrypto = libcrypto_proj.get_variable('libcrypto_dep')
 +config_h.set('HAVE_CRYPTO', 1)
- 
+
  if liblttng.found()
      tracing_enabled = true
 diff --git a/src/libcamera/pipeline/rpi/pisp/meson.build b/src/libcamera/pipeline/rpi/pisp/meson.build
@@ -84,13 +84,13 @@ index 178df94c..ecb18157 100644
 +++ b/src/libcamera/pipeline/rpi/pisp/meson.build
 @@ -5,7 +5,7 @@ libcamera_internal_sources += files([
  ])
- 
+
  librt = cc.find_library('rt', required : true)
 -libpisp_dep = dependency('libpisp', fallback : ['libpisp', 'libpisp_dep'])
 +libpisp_dep = dependency('libpisp', fallback : ['libpisp', 'libpisp_dep'], static : true)
- 
+
  libcamera_deps += [libpisp_dep, librt]
- 
+
 diff --git a/src/libcamera/proxy/worker/meson.build b/src/libcamera/proxy/worker/meson.build
 index 8c54a2e2..b455d7a4 100644
 --- a/src/libcamera/proxy/worker/meson.build
@@ -98,10 +98,10 @@ index 8c54a2e2..b455d7a4 100644
 @@ -24,8 +24,7 @@ foreach mojom : ipa_mojoms
                         dependencies : libcamera_private)
  endforeach
- 
+
 -config_h.set('IPA_PROXY_DIR',
 -             '"' + get_option('prefix') / proxy_install_dir + '"')
 +config_h.set('IPA_PROXY_DIR', '"/dev/null"')
- 
+
  summary({
           'IPA_PROXY_DIR' : config_h.get('IPA_PROXY_DIR'),
