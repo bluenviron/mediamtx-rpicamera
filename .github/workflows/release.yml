@@ -36,7 +36,7 @@ jobs:
         path: build/mtxrpicam_64.tar.gz
         name: mtxrpicam_64.tar.gz
 
-  github_release:
+  pre_release:
     needs:
     - build_32
     - build_64
@@ -52,6 +52,28 @@ jobs:
       with:
         name: mtxrpicam_64.tar.gz
         path: binaries/
+
+    - run: cd binaries && sha256sum -b * > checksums.sha256
+
+    - uses: actions/attest-build-provenance@v2
+      with:
+        subject-path: '${{ github.workspace }}/binaries/*'
+
+    - uses: actions/upload-artifact@v4
+      with:
+        name: binaries
+        path: binaries
+
+  github_release:
+    needs:
+    - pre_release
+    runs-on: ubuntu-22.04
+
+    steps:
+    - uses: actions/download-artifact@v4
+      with:
+        name: binaries
+        path: binaries
 
     - uses: actions/github-script@v6
       with:
