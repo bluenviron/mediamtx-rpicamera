@@ -5,6 +5,10 @@ on:
     tags:
     - 'v*'
 
+permissions:
+  id-token: write
+  attestations: write
+
 jobs:
   build_32:
     runs-on: ubuntu-22.04
