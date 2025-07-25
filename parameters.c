@@ -4,8 +4,6 @@
 #include <stdarg.h>
 #include <stdio.h>
 
-#include <linux/videodev2.h>
-
 #include "base64.h"
 #include "parameters.h"
 
@@ -134,34 +132,22 @@ bool parameters_unserialize(parameters_t *params, const uint8_t *buf, size_t buf
             params->idr_period = atoi(val);
         } else if (strcmp(key, "Bitrate") == 0) {
             params->bitrate = atoi(val);
-        } else if (strcmp(key, "Profile") == 0) {
-            char *decoded_val = base64_decode(val);
-            if (strcmp(decoded_val, "baseline") == 0) {
-                params->profile = V4L2_MPEG_VIDEO_H264_PROFILE_BASELINE;
-            } else if (strcmp(decoded_val, "main") == 0) {
-                params->profile = V4L2_MPEG_VIDEO_H264_PROFILE_MAIN;
-            } else {
-                params->profile = V4L2_MPEG_VIDEO_H264_PROFILE_HIGH;
-            }
-            free(decoded_val);
-        } else if (strcmp(key, "Level") == 0) {
-            char *decoded_val = base64_decode(val);
-            if (strcmp(decoded_val, "4.0") == 0) {
-                params->level = V4L2_MPEG_VIDEO_H264_LEVEL_4_0;
-            } else if (strcmp(decoded_val, "4.1") == 0) {
-                params->level = V4L2_MPEG_VIDEO_H264_LEVEL_4_1;
-            } else {
-                params->level = V4L2_MPEG_VIDEO_H264_LEVEL_4_2;
-            }
-            free(decoded_val);
+        } else if (strcmp(key, "HardwareH264Profile") == 0) {
+            params->hardware_h264_profile = base64_decode(val);
+        } else if (strcmp(key, "HardwareH264Level") == 0) {
+            params->hardware_h264_level = base64_decode(val);
+        } else if (strcmp(key, "SoftwareH264Profile") == 0) {
+            params->software_h264_profile = base64_decode(val);
+        } else if (strcmp(key, "SoftwareH264Level") == 0) {
+            params->software_h264_level = base64_decode(val);
         } else if (strcmp(key, "SecondaryWidth") == 0) {
             params->secondary_width = atoi(val);
         } else if (strcmp(key, "SecondaryHeight") == 0) {
             params->secondary_height = atoi(val);
         } else if (strcmp(key, "SecondaryFPS") == 0) {
             params->secondary_fps = atof(val);
-        } else if (strcmp(key, "SecondaryQuality") == 0) {
-            params->secondary_quality = atoi(val);
+        } else if (strcmp(key, "SecondaryMJPEGQuality") == 0) {
+            params->secondary_mjpeg_quality = atoi(val);
         }
     }
 

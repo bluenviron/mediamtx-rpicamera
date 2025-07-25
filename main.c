@@ -145,7 +145,7 @@ int main() {
         ok = encoder_jpeg_create(
             params.secondary_width,
             params.secondary_height,
-            params.secondary_quality,
+            params.secondary_mjpeg_quality,
             camera_get_secondary_stride(cam),
             on_jpeg_output,
             &enc_jpeg);

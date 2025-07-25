@@ -9,10 +9,6 @@
 
 #include "encoder_soft_h264.h"
 
-#define PRESET      "ultrafast"
-#define TUNE        "zerolatency"
-#define PROFILE     "baseline"
-
 static char errbuf[256];
 
 static void set_error(const char *format, ...) {
@@ -32,7 +28,6 @@ typedef struct {
     x264_t *x_handler;
     x264_picture_t x_pic_in;
     x264_picture_t x_pic_out;
-    uint64_t next_pts;
     pthread_mutex_t mutex;
 } encoder_soft_h264_priv_t;
 
@@ -41,10 +36,18 @@ bool encoder_soft_h264_create(const parameters_t *params, int stride, int colors
     encoder_soft_h264_priv_t *encp = (encoder_soft_h264_priv_t *)(*enc);
     memset(encp, 0, sizeof(encoder_soft_h264_priv_t));
 
-    int res = x264_param_default_preset(&encp->x_params, PRESET, TUNE);
-    if (res < 0) {
-        set_error("x264_param_default_preset() failed");
-        goto failed;
+    if (strcmp(params->software_h264_profile, "baseline") == 0) {
+        int res = x264_param_default_preset(&encp->x_params, "ultrafast", "zerolatency");
+        if (res < 0) {
+            set_error("x264_param_default_preset() failed");
+            goto failed;
+        }
+    } else {
+        int res = x264_param_default_preset(&encp->x_params, "superfast", NULL);
+        if (res < 0) {
+            set_error("x264_param_default_preset() failed");
+            goto failed;
+        }
     }
 
     encp->x_params.i_width  = params->width;
@@ -68,8 +71,9 @@ bool encoder_soft_h264_create(const parameters_t *params, int stride, int colors
     encp->x_params.rc.i_vbv_max_bitrate = params->bitrate / 1000;
     encp->x_params.rc.i_rc_method = X264_RC_ABR;
     encp->x_params.i_bframe = 0;
+    encp->x_params.i_level_idc = (int)(atof(params->software_h264_level) * 10.0f);
 
-    res = x264_param_apply_profile(&encp->x_params, PROFILE);
+    int res = x264_param_apply_profile(&encp->x_params, params->software_h264_profile);
     if (res < 0) {
         set_error("x264_param_apply_profile() failed");
         goto failed;
@@ -103,7 +107,7 @@ void encoder_soft_h264_encode(encoder_soft_h264_t *enc, uint8_t *buffer_mapped, 
     encp->x_pic_in.img.plane[0] = buffer_mapped; // Y
     encp->x_pic_in.img.plane[1] = encp->x_pic_in.img.plane[0] + encp->x_pic_in.img.i_stride[0] * encp->params->height; // U
     encp->x_pic_in.img.plane[2] = encp->x_pic_in.img.plane[1] + (encp->x_pic_in.img.i_stride[0] / 2) * (encp->params->height / 2); // V
-    encp->x_pic_in.i_pts = encp->next_pts++;
+    encp->x_pic_in.i_pts = (int64_t)timestamp;
 
     pthread_mutex_lock(&encp->mutex);
 
@@ -113,7 +117,9 @@ void encoder_soft_h264_encode(encoder_soft_h264_t *enc, uint8_t *buffer_mapped, 
 
     pthread_mutex_unlock(&encp->mutex);
 
-    encp->output_cb(nal->p_payload, frame_size, timestamp);
+    if (nal != NULL) {
+        encp->output_cb(nal->p_payload, frame_size, (uint64_t)encp->x_pic_out.i_pts);
+    }
 }
 
 void encoder_soft_h264_reload_params(encoder_soft_h264_t *enc, const parameters_t *params) {
