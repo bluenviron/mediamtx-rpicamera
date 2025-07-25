@@ -114,7 +114,13 @@ bool encoder_hard_h264_create(const parameters_t *params, int stride, int colors
 
     struct v4l2_control ctrl = {0};
     ctrl.id = V4L2_CID_MPEG_VIDEO_H264_PROFILE;
-    ctrl.value = params->profile;
+    if (strcmp(params->hardware_h264_profile, "baseline") == 0) {
+        ctrl.value = V4L2_MPEG_VIDEO_H264_PROFILE_BASELINE;
+    } else if (strcmp(params->hardware_h264_profile, "main") == 0) {
+        ctrl.value = V4L2_MPEG_VIDEO_H264_PROFILE_MAIN;
+    } else {
+        ctrl.value = V4L2_MPEG_VIDEO_H264_PROFILE_HIGH;
+    }
     int res = ioctl(encp->fd, VIDIOC_S_CTRL, &ctrl);
     if (res != 0) {
         set_error("unable to set profile");
@@ -122,7 +128,13 @@ bool encoder_hard_h264_create(const parameters_t *params, int stride, int colors
     }
 
     ctrl.id = V4L2_CID_MPEG_VIDEO_H264_LEVEL;
-    ctrl.value = params->level;
+    if (strcmp(params->hardware_h264_level, "4.0") == 0) {
+        ctrl.value = V4L2_MPEG_VIDEO_H264_LEVEL_4_0;
+    } else if (strcmp(params->hardware_h264_level, "4.1") == 0) {
+        ctrl.value = V4L2_MPEG_VIDEO_H264_LEVEL_4_1;
+    } else {
+        ctrl.value = V4L2_MPEG_VIDEO_H264_LEVEL_4_2;
+    }
     res = ioctl(encp->fd, VIDIOC_S_CTRL, &ctrl);
     if (res != 0) {
         set_error("unable to set level");
