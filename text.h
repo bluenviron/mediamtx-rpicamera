@@ -1,8 +1,8 @@
 #ifndef __TEXT_H__
 #define __TEXT_H__
 
-#include <stdint.h>
 #include <stdbool.h>
+#include <stdint.h>
 
 #include "parameters.h"
 

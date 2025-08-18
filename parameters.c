@@ -1,8 +1,8 @@
+#include <stdarg.h>
+#include <stdbool.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdbool.h>
-#include <stdarg.h>
-#include <stdio.h>
 
 #include "base64.h"
 #include "parameters.h"
@@ -15,11 +15,10 @@ static void set_error(const char *format, ...) {
     vsnprintf(errbuf, 256, format, args);
 }
 
-const char *parameters_get_error() {
-    return errbuf;
-}
+const char *parameters_get_error() { return errbuf; }
 
-bool parameters_unserialize(parameters_t *params, const uint8_t *buf, size_t buf_size) {
+bool parameters_unserialize(parameters_t *params, const uint8_t *buf,
+                            size_t buf_size) {
     memset(params, 0, sizeof(parameters_t));
 
     char *copy = malloc(buf_size + 1);
@@ -28,7 +27,7 @@ bool parameters_unserialize(parameters_t *params, const uint8_t *buf, size_t buf
     char *ptr = copy;
     char *entry;
 
-    while ((entry = strsep(&ptr, " ")) != NULL)  {
+    while ((entry = strsep(&ptr, " ")) != NULL) {
         char *key = strsep(&entry, ":");
         char *val = strsep(&entry, ":");
 
@@ -47,7 +46,7 @@ bool parameters_unserialize(parameters_t *params, const uint8_t *buf, size_t buf
         } else if (strcmp(key, "Brightness") == 0) {
             params->brightness = atof(val);
         } else if (strcmp(key, "Contrast") == 0) {
-           params->contrast = atof(val);
+            params->contrast = atof(val);
         } else if (strcmp(key, "Saturation") == 0) {
             params->saturation = atof(val);
         } else if (strcmp(key, "Sharpness") == 0) {

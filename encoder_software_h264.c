@@ -1,8 +1,8 @@
-#include <string.h>
-#include <stdlib.h>
+#include <pthread.h>
 #include <stdint.h>
 #include <stdio.h>
-#include <pthread.h>
+#include <stdlib.h>
+#include <string.h>
 
 #include <linux/videodev2.h>
 #include <x264.h>
@@ -17,9 +17,7 @@ static void set_error(const char *format, ...) {
     vsnprintf(errbuf, 256, format, args);
 }
 
-const char *encoder_software_h264_get_error() {
-    return errbuf;
-}
+const char *encoder_software_h264_get_error() { return errbuf; }
 
 typedef struct {
     const parameters_t *params;
@@ -31,13 +29,17 @@ typedef struct {
     pthread_mutex_t mutex;
 } encoder_software_h264_priv_t;
 
-bool encoder_software_h264_create(const parameters_t *params, int stride, int colorspace, encoder_software_h264_output_cb output_cb, encoder_software_h264_t **enc) {
+bool encoder_software_h264_create(const parameters_t *params, int stride,
+                                  int colorspace,
+                                  encoder_software_h264_output_cb output_cb,
+                                  encoder_software_h264_t **enc) {
     *enc = malloc(sizeof(encoder_software_h264_priv_t));
     encoder_software_h264_priv_t *encp = (encoder_software_h264_priv_t *)(*enc);
     memset(encp, 0, sizeof(encoder_software_h264_priv_t));
 
     if (strcmp(params->software_h264_profile, "baseline") == 0) {
-        int res = x264_param_default_preset(&encp->x_params, "ultrafast", "zerolatency");
+        int res = x264_param_default_preset(&encp->x_params, "ultrafast",
+                                            "zerolatency");
         if (res < 0) {
             set_error("x264_param_default_preset() failed");
             goto failed;
@@ -50,7 +52,7 @@ bool encoder_software_h264_create(const parameters_t *params, int stride, int co
         }
     }
 
-    encp->x_params.i_width  = params->width;
+    encp->x_params.i_width = params->width;
     encp->x_params.i_height = params->height;
     encp->x_params.i_csp = X264_CSP_I420;
     encp->x_params.i_bitdepth = 8;
@@ -71,9 +73,11 @@ bool encoder_software_h264_create(const parameters_t *params, int stride, int co
     encp->x_params.rc.i_vbv_max_bitrate = params->bitrate / 1000;
     encp->x_params.rc.i_rc_method = X264_RC_ABR;
     encp->x_params.i_bframe = 0;
-    encp->x_params.i_level_idc = (int)(atof(params->software_h264_level) * 10.0f);
+    encp->x_params.i_level_idc =
+        (int)(atof(params->software_h264_level) * 10.0f);
 
-    int res = x264_param_apply_profile(&encp->x_params, params->software_h264_profile);
+    int res = x264_param_apply_profile(&encp->x_params,
+                                       params->software_h264_profile);
     if (res < 0) {
         set_error("x264_param_apply_profile() failed");
         goto failed;
@@ -88,7 +92,8 @@ bool encoder_software_h264_create(const parameters_t *params, int stride, int co
     encp->x_pic_in.img.i_stride[1] = stride >> 1;
     encp->x_pic_in.img.i_stride[2] = stride >> 1;
 
-    x264_picture_alloc(&encp->x_pic_out, encp->x_params.i_csp, encp->x_params.i_width, encp->x_params.i_height);
+    x264_picture_alloc(&encp->x_pic_out, encp->x_params.i_csp,
+                       encp->x_params.i_width, encp->x_params.i_height);
 
     encp->params = params;
     encp->output_cb = output_cb;
@@ -101,28 +106,37 @@ failed:
     return false;
 }
 
-void encoder_software_h264_encode(encoder_software_h264_t *enc, uint8_t *buffer_mapped, int buffer_fd, size_t buffer_size, uint64_t timestamp) {
+void encoder_software_h264_encode(encoder_software_h264_t *enc,
+                                  uint8_t *buffer_mapped, int buffer_fd,
+                                  size_t buffer_size, uint64_t timestamp) {
     encoder_software_h264_priv_t *encp = (encoder_software_h264_priv_t *)enc;
 
     encp->x_pic_in.img.plane[0] = buffer_mapped; // Y
-    encp->x_pic_in.img.plane[1] = encp->x_pic_in.img.plane[0] + encp->x_pic_in.img.i_stride[0] * encp->params->height; // U
-    encp->x_pic_in.img.plane[2] = encp->x_pic_in.img.plane[1] + (encp->x_pic_in.img.i_stride[0] / 2) * (encp->params->height / 2); // V
+    encp->x_pic_in.img.plane[1] =
+        encp->x_pic_in.img.plane[0] +
+        encp->x_pic_in.img.i_stride[0] * encp->params->height; // U
+    encp->x_pic_in.img.plane[2] =
+        encp->x_pic_in.img.plane[1] +
+        (encp->x_pic_in.img.i_stride[0] / 2) * (encp->params->height / 2); // V
     encp->x_pic_in.i_pts = (int64_t)timestamp;
 
     pthread_mutex_lock(&encp->mutex);
 
     x264_nal_t *nal;
     int nal_count;
-    int frame_size = x264_encoder_encode(encp->x_handler, &nal, &nal_count, &encp->x_pic_in, &encp->x_pic_out);
+    int frame_size = x264_encoder_encode(encp->x_handler, &nal, &nal_count,
+                                         &encp->x_pic_in, &encp->x_pic_out);
 
     pthread_mutex_unlock(&encp->mutex);
 
     if (nal != NULL) {
-        encp->output_cb(nal->p_payload, frame_size, (uint64_t)encp->x_pic_out.i_pts);
+        encp->output_cb(nal->p_payload, frame_size,
+                        (uint64_t)encp->x_pic_out.i_pts);
     }
 }
 
-void encoder_software_h264_reload_params(encoder_software_h264_t *enc, const parameters_t *params) {
+void encoder_software_h264_reload_params(encoder_software_h264_t *enc,
+                                         const parameters_t *params) {
     encoder_software_h264_priv_t *encp = (encoder_software_h264_priv_t *)enc;
 
     pthread_mutex_lock(&encp->mutex);

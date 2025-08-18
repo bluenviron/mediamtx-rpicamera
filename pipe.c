@@ -1,8 +1,8 @@
+#include <fcntl.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <fcntl.h>
 #include <unistd.h>
 
 #include "pipe.h"
@@ -25,7 +25,8 @@ void pipe_write_ready(int fd) {
     write(fd, buf, n);
 }
 
-void pipe_write_data(int fd, const uint8_t *mapped, uint32_t size, uint64_t ts) {
+void pipe_write_data(int fd, const uint8_t *mapped, uint32_t size,
+                     uint64_t ts) {
     char head[] = {'d'};
     size += 1 + sizeof(uint64_t);
     write(fd, &size, 4);
@@ -34,7 +35,8 @@ void pipe_write_data(int fd, const uint8_t *mapped, uint32_t size, uint64_t ts) 
     write(fd, mapped, size - 1 - sizeof(uint64_t));
 }
 
-void pipe_write_secondary_data(int fd, const uint8_t *mapped, uint32_t size, uint64_t ts) {
+void pipe_write_secondary_data(int fd, const uint8_t *mapped, uint32_t size,
+                               uint64_t ts) {
     char head[] = {'s'};
     size += 1 + sizeof(uint64_t);
     write(fd, &size, 4);

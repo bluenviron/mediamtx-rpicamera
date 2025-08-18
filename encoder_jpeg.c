@@ -1,11 +1,10 @@
-#include <stdbool.h>
-#include <stdio.h>
-#include <stdarg.h>
-#include <stdlib.h>
-#include <stdint.h>
-#include <string.h>
-#include <stdio.h>
 #include <pthread.h>
+#include <stdarg.h>
+#include <stdbool.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #include <jpeglib.h>
 
@@ -13,9 +12,7 @@
 
 static char errbuf[256];
 
-const char *encoder_jpeg_get_error() {
-    return errbuf;
-}
+const char *encoder_jpeg_get_error() { return errbuf; }
 
 typedef struct {
     int width;
@@ -31,14 +28,10 @@ typedef struct {
     encoder_jpeg_output_cb output_cb;
 } encoder_jpeg_priv_t;
 
-static void save_as_jpeg(
-    unsigned int width,
-    unsigned int height,
-    unsigned int quality,
-    unsigned int stride,
-    uint8_t *in_buf,
-    uint8_t **out_buf,
-    unsigned long *out_size) {
+static void save_as_jpeg(unsigned int width, unsigned int height,
+                         unsigned int quality, unsigned int stride,
+                         uint8_t *in_buf, uint8_t **out_buf,
+                         unsigned long *out_size) {
     struct jpeg_error_mgr jerr;
     struct jpeg_compress_struct cinfo;
     cinfo.err = jpeg_std_error(&jerr);
@@ -65,12 +58,12 @@ static void save_as_jpeg(
 
     while (cinfo.next_scanline < height) {
         for (unsigned int j = 0; j < width; j++) {
-            int i1 = cinfo.next_scanline*stride + j;
-            int i2 = cinfo.next_scanline/2*stride/2 + j/2;
+            int i1 = cinfo.next_scanline * stride + j;
+            int i2 = cinfo.next_scanline / 2 * stride / 2 + j / 2;
 
-            row_buf[j*3 + 0] = Y[i1];
-            row_buf[j*3 + 1] = U[i2];
-            row_buf[j*3 + 2] = V[i2];
+            row_buf[j * 3 + 0] = Y[i1];
+            row_buf[j * 3 + 1] = U[i2];
+            row_buf[j * 3 + 2] = V[i2];
         }
 
         jpeg_write_scanlines(&cinfo, row_pointer, 1);
@@ -102,7 +95,8 @@ static void *thread_main(void *userdata) {
 
         uint8_t *out_buf;
         unsigned long out_size = 0;
-        save_as_jpeg(encp->width, encp->height, encp->quality, encp->stride, buffer, &out_buf, &out_size);
+        save_as_jpeg(encp->width, encp->height, encp->quality, encp->stride,
+                     buffer, &out_buf, &out_size);
 
         encp->output_cb(out_buf, out_size, timestamp);
 
@@ -112,13 +106,9 @@ static void *thread_main(void *userdata) {
     return NULL;
 }
 
-bool encoder_jpeg_create(
-    int width,
-    int height,
-    int quality,
-    int stride,
-    encoder_jpeg_output_cb output_cb,
-    encoder_jpeg_t **enc) {
+bool encoder_jpeg_create(int width, int height, int quality, int stride,
+                         encoder_jpeg_output_cb output_cb,
+                         encoder_jpeg_t **enc) {
     *enc = malloc(sizeof(encoder_jpeg_priv_t));
     encoder_jpeg_priv_t *encp = (encoder_jpeg_priv_t *)(*enc);
     memset(encp, 0, sizeof(encoder_jpeg_priv_t));
@@ -135,7 +125,8 @@ bool encoder_jpeg_create(
     return true;
 }
 
-void encoder_jpeg_encode(encoder_jpeg_t *enc, uint8_t *buffer, uint64_t timestamp) {
+void encoder_jpeg_encode(encoder_jpeg_t *enc, uint8_t *buffer,
+                         uint64_t timestamp) {
     encoder_jpeg_priv_t *encp = (encoder_jpeg_priv_t *)enc;
 
     pthread_mutex_lock(&encp->mutex);
