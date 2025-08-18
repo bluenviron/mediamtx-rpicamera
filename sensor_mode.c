@@ -1,12 +1,13 @@
-#include <stdio.h>
 #include <ctype.h>
+#include <stdio.h>
 #include <stdlib.h>
 
 #include "sensor_mode.h"
 
 bool sensor_mode_load(const char *encoded, sensor_mode_t *mode) {
     char p;
-    int n = sscanf(encoded, "%u:%u:%u:%c", &(mode->width), &(mode->height), &(mode->bit_depth), &p);
+    int n = sscanf(encoded, "%u:%u:%u:%c", &(mode->width), &(mode->height),
+                   &(mode->bit_depth), &p);
     if (n < 2) {
         return false;
     }

@@ -1,11 +1,11 @@
 #ifndef __PARAMETERS_H__
 #define __PARAMETERS_H__
 
-#include <stdint.h>
 #include <stdbool.h>
+#include <stdint.h>
 
-#include "window.h"
 #include "sensor_mode.h"
+#include "window.h"
 
 typedef struct {
     char *log_level;
@@ -62,7 +62,8 @@ extern "C" {
 #endif
 
 const char *parameters_get_error();
-bool parameters_unserialize(parameters_t *params, const uint8_t *buf, size_t buf_size);
+bool parameters_unserialize(parameters_t *params, const uint8_t *buf,
+                            size_t buf_size);
 void parameters_destroy(parameters_t *params);
 
 #ifdef __cplusplus

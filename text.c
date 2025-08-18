@@ -16,11 +16,10 @@ static void set_error(const char *format, ...) {
     vsnprintf(errbuf, 256, format, args);
 }
 
-const char *text_get_error() {
-    return errbuf;
-}
+const char *text_get_error() { return errbuf; }
 
-static void str_replace(char *buffer, size_t bufsize, const char *find, const char *replace) {
+static void str_replace(char *buffer, size_t bufsize, const char *find,
+                        const char *replace) {
     char *ptr = strstr(buffer, find);
     if (ptr != NULL) {
         int64_t find_len = strlen(find);
@@ -47,7 +46,8 @@ static void str_replace(char *buffer, size_t bufsize, const char *find, const ch
     }
 }
 
-static void extended_strftime(char *buffer, size_t bufsize, const char *format, const struct timeval *time) {
+static void extended_strftime(char *buffer, size_t bufsize, const char *format,
+                              const struct timeval *time) {
     struct tm *tm_info = localtime(&time->tv_sec);
     strftime(buffer, bufsize, format, tm_info);
 
@@ -83,21 +83,14 @@ bool text_create(const parameters_t *params, int stride, text_t **text) {
             goto failed;
         }
 
-        error = FT_New_Memory_Face(
-            textp->library,
-            text_font_ttf,
-            sizeof(text_font_ttf),
-            0,
-            &textp->face);
+        error = FT_New_Memory_Face(textp->library, text_font_ttf,
+                                   sizeof(text_font_ttf), 0, &textp->face);
         if (error) {
             set_error("FT_New_Memory_Face() failed");
             goto failed;
         }
 
-        error = FT_Set_Pixel_Sizes(
-            textp->face,
-            25,
-            25);
+        error = FT_Set_Pixel_Sizes(textp->face, 25, 25);
         if (error) {
             set_error("FT_Set_Pixel_Sizes() failed");
             goto failed;
@@ -112,7 +105,8 @@ failed:
     return false;
 }
 
-static void draw_rect(uint8_t *buf, int stride, int height, int x, int y, unsigned int rect_width, unsigned int rect_height) {
+static void draw_rect(uint8_t *buf, int stride, int height, int x, int y,
+                      unsigned int rect_width, unsigned int rect_height) {
     uint8_t *Y = buf;
     uint8_t *U = Y + stride * height;
     uint8_t *V = U + (stride / 2) * (height / 2);
@@ -123,35 +117,45 @@ static void draw_rect(uint8_t *buf, int stride, int height, int x, int y, unsign
         for (unsigned int src_x = 0; src_x < rect_width; src_x++) {
             unsigned int dest_x = x + src_x;
             unsigned int dest_y = y + src_y;
-            int i1 = dest_y*stride + dest_x;
-            int i2 = dest_y/2*stride/2 + dest_x/2;
+            int i1 = dest_y * stride + dest_x;
+            int i2 = dest_y / 2 * stride / 2 + dest_x / 2;
 
-            Y[i1] = ((color[0] * opacity) + (uint32_t)Y[i1] * (255 - opacity)) / 255;
-            U[i2] = ((color[1] * opacity) + (uint32_t)U[i2] * (255 - opacity)) / 255;
-            V[i2] = ((color[2] * opacity) + (uint32_t)V[i2] * (255 - opacity)) / 255;
+            Y[i1] = ((color[0] * opacity) + (uint32_t)Y[i1] * (255 - opacity)) /
+                    255;
+            U[i2] = ((color[1] * opacity) + (uint32_t)U[i2] * (255 - opacity)) /
+                    255;
+            V[i2] = ((color[2] * opacity) + (uint32_t)V[i2] * (255 - opacity)) /
+                    255;
         }
     }
 }
 
-static void draw_bitmap(uint8_t *buf, int stride, int height, const FT_Bitmap *bitmap, int x, int y) {
+static void draw_bitmap(uint8_t *buf, int stride, int height,
+                        const FT_Bitmap *bitmap, int x, int y) {
     uint8_t *Y = buf;
     uint8_t *U = Y + stride * height;
     uint8_t *V = U + (stride / 2) * (height / 2);
 
     for (unsigned int src_y = 0; src_y < bitmap->rows; src_y++) {
         for (unsigned int src_x = 0; src_x < bitmap->width; src_x++) {
-            uint8_t v = bitmap->buffer[src_y*bitmap->pitch + src_x];
+            uint8_t v = bitmap->buffer[src_y * bitmap->pitch + src_x];
 
             if (v != 0) {
                 unsigned int dest_x = x + src_x;
                 unsigned int dest_y = y + src_y;
-                int i1 = dest_y*stride + dest_x;
-                int i2 = dest_y/2*stride/2 + dest_x/2;
+                int i1 = dest_y * stride + dest_x;
+                int i2 = dest_y / 2 * stride / 2 + dest_x / 2;
                 uint32_t opacity = (uint32_t)v;
 
-                Y[i1] = (uint8_t)(((uint32_t)v * opacity + (uint32_t)Y[i1] * (255 - opacity)) / 255);
-                U[i2] = (uint8_t)((128 * opacity + (uint32_t)U[i2] * (255 - opacity)) / 255);
-                V[i2] = (uint8_t)((128 * opacity + (uint32_t)V[i2] * (255 - opacity)) / 255);
+                Y[i1] = (uint8_t)(((uint32_t)v * opacity +
+                                   (uint32_t)Y[i1] * (255 - opacity)) /
+                                  255);
+                U[i2] = (uint8_t)((128 * opacity +
+                                   (uint32_t)U[i2] * (255 - opacity)) /
+                                  255);
+                V[i2] = (uint8_t)((128 * opacity +
+                                   (uint32_t)V[i2] * (255 - opacity)) /
+                                  255);
             }
         }
     }
@@ -182,14 +186,8 @@ void text_draw(text_t *text, uint8_t *buf) {
         char buffer[256];
         extended_strftime(buffer, 256, textp->text_overlay, &now);
 
-        draw_rect(
-            buf,
-            textp->stride,
-            textp->height,
-            7,
-            7,
-            get_text_width(textp->face, buffer) + 10,
-            34);
+        draw_rect(buf, textp->stride, textp->height, 7, 7,
+                  get_text_width(textp->face, buffer) + 10, 34);
 
         int x = 12;
         int y = 33;
@@ -200,13 +198,10 @@ void text_draw(text_t *text, uint8_t *buf) {
                 continue;
             }
 
-            draw_bitmap(
-                buf,
-                textp->stride,
-                textp->height,
-                &textp->face->glyph->bitmap,
-                x + textp->face->glyph->bitmap_left,
-                y - textp->face->glyph->bitmap_top);
+            draw_bitmap(buf, textp->stride, textp->height,
+                        &textp->face->glyph->bitmap,
+                        x + textp->face->glyph->bitmap_left,
+                        y - textp->face->glyph->bitmap_top);
 
             x += textp->face->glyph->advance.x >> 6;
         }

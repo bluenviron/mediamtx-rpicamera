@@ -10,7 +10,7 @@ bool window_load(const char *encoded, window_t *window) {
     char *ptr = copy;
     char *token;
 
-    while ((token = strsep(&ptr, ",")) != NULL)  {
+    while ((token = strsep(&ptr, ",")) != NULL) {
         vals[i] = atof(token);
         if (vals[i] < 0 || vals[i] > 1) {
             free(copy);

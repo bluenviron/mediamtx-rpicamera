@@ -1,34 +1,34 @@
-#include <stdio.h>
-#include <stdarg.h>
 #include <cstring>
-#include <sys/mman.h>
+#include <fcntl.h>
 #include <iostream>
 #include <mutex>
+#include <stdarg.h>
+#include <stdio.h>
 #include <sys/ioctl.h>
-#include <fcntl.h>
+#include <sys/mman.h>
 #include <unistd.h>
 
-#include <linux/videodev2.h>
-#include <linux/dma-buf.h>
-#include <linux/dma-heap.h>
-#include <libcamera/camera_manager.h>
 #include <libcamera/camera.h>
-#include <libcamera/formats.h>
+#include <libcamera/camera_manager.h>
 #include <libcamera/control_ids.h>
 #include <libcamera/controls.h>
+#include <libcamera/formats.h>
 #include <libcamera/framebuffer_allocator.h>
 #include <libcamera/property_ids.h>
 #include <libcamera/transform.h>
+#include <linux/dma-buf.h>
+#include <linux/dma-heap.h>
+#include <linux/videodev2.h>
 
 #include "camera.h"
 
-using libcamera::CameraManager;
-using libcamera::CameraConfiguration;
 using libcamera::Camera;
+using libcamera::CameraConfiguration;
+using libcamera::CameraManager;
 using libcamera::ColorSpace;
 using libcamera::ControlList;
-using libcamera::FrameBufferAllocator;
 using libcamera::FrameBuffer;
+using libcamera::FrameBufferAllocator;
 using libcamera::Orientation;
 using libcamera::PixelFormat;
 using libcamera::Rectangle;
@@ -37,8 +37,8 @@ using libcamera::SharedFD;
 using libcamera::Size;
 using libcamera::Span;
 using libcamera::Stream;
-using libcamera::StreamRole;
 using libcamera::StreamConfiguration;
+using libcamera::StreamRole;
 using libcamera::Transform;
 using libcamera::UniqueFD;
 
@@ -54,13 +54,11 @@ static void set_error(const char *format, ...) {
     vsnprintf(errbuf, 256, format, args);
 }
 
-const char *camera_get_error() {
-    return errbuf;
-}
+const char *camera_get_error() { return errbuf; }
 
 static long timespec_sub(struct timespec *a, struct timespec *b) {
     return ((a->tv_sec * 1000000000L) + a->tv_nsec) -
-        ((b->tv_sec * 1000000000L) + b->tv_nsec);
+           ((b->tv_sec * 1000000000L) + b->tv_nsec);
 }
 
 static void timespec_add(struct timespec *a, long nanosecs) {
@@ -79,7 +77,8 @@ static int create_dma_allocator() {
         "/dev/dma_heap/linux,cma",
     };
 
-    for (unsigned int i = 0; i < sizeof(heap_positions) / sizeof(const char *); i++) {
+    for (unsigned int i = 0; i < sizeof(heap_positions) / sizeof(const char *);
+         i++) {
         int fd = open(heap_positions[i], O_RDWR | O_CLOEXEC, 0);
         if (fd >= 0) {
             return fd;
@@ -90,17 +89,20 @@ static int create_dma_allocator() {
 
 // https://github.com/raspberrypi/libcamera-apps/blob/dd97618a25523c2c4aa58f87af5f23e49aa6069c/core/libcamera_app.cpp#L42
 static PixelFormat mode_to_pixel_format(sensor_mode_t *mode) {
-    static std::vector<std::pair<std::pair<unsigned int, bool>, PixelFormat>> table = {
-        { {8, false}, formats::SBGGR8 },
-        { {8, true}, formats::SBGGR8 },
-        { {10, false}, formats::SBGGR10 },
-        { {10, true}, formats::SBGGR10_CSI2P },
-        { {12, false}, formats::SBGGR12 },
-        { {12, true}, formats::SBGGR12_CSI2P },
-    };
+    static std::vector<std::pair<std::pair<unsigned int, bool>, PixelFormat>>
+        table = {
+            {{8, false}, formats::SBGGR8},
+            {{8, true}, formats::SBGGR8},
+            {{10, false}, formats::SBGGR10},
+            {{10, true}, formats::SBGGR10_CSI2P},
+            {{12, false}, formats::SBGGR12},
+            {{12, true}, formats::SBGGR12_CSI2P},
+        };
 
-    auto it = std::find_if(table.begin(), table.end(), [&mode] (auto &m) {
-        return mode->bit_depth == m.first.first && mode->packed == m.first.second; });
+    auto it = std::find_if(table.begin(), table.end(), [&mode](auto &m) {
+        return mode->bit_depth == m.first.first &&
+               mode->packed == m.first.second;
+    });
     if (it != table.end()) {
         return it->second;
     }
@@ -118,27 +120,29 @@ static int get_v4l2_colorspace(std::optional<ColorSpace> const &cs) {
 // https://github.com/raspberrypi/libcamera-apps/blob/a6267d51949d0602eedf60f3ddf8c6685f652812/core/options.cpp#L101
 static void set_hdr(bool hdr) {
     bool ok = false;
-    for (int i = 0; i < 4 && !ok; i++)
-    {
+    for (int i = 0; i < 4 && !ok; i++) {
         std::string dev("/dev/v4l-subdev");
         dev += (char)('0' + i);
         int fd = open(dev.c_str(), O_RDWR, 0);
         if (fd < 0)
             continue;
 
-        v4l2_control ctrl { V4L2_CID_WIDE_DYNAMIC_RANGE, hdr };
+        v4l2_control ctrl{V4L2_CID_WIDE_DYNAMIC_RANGE, hdr};
         ok = !ioctl(fd, VIDIOC_S_CTRL, &ctrl);
         close(fd);
     }
 }
 
 // https://github.com/raspberrypi/rpicam-apps/blob/74abee8f2de519fed9cb88d39473d1dd4cf50b62/core/rpicam_app.hpp#L176
-static std::vector<std::shared_ptr<Camera>> get_cameras(const CameraManager *camera_manager) {
+static std::vector<std::shared_ptr<Camera>>
+get_cameras(const CameraManager *camera_manager) {
     std::vector<std::shared_ptr<Camera>> cameras = camera_manager->cameras();
-    auto rem = std::remove_if(cameras.begin(), cameras.end(),
-        [](auto &cam) { return cam->id().find("/usb") != std::string::npos; });
+    auto rem = std::remove_if(cameras.begin(), cameras.end(), [](auto &cam) {
+        return cam->id().find("/usb") != std::string::npos;
+    });
     cameras.erase(rem, cameras.end());
-    std::sort(cameras.begin(), cameras.end(), [](auto l, auto r) { return l->id() > r->id(); });
+    std::sort(cameras.begin(), cameras.end(),
+              [](auto l, auto r) { return l->id() > r->id(); });
     return cameras;
 }
 
@@ -160,11 +164,8 @@ struct CameraPriv {
     bool in_error;
 };
 
-bool camera_create(
-    const parameters_t *params,
-    camera_frame_cb frame_cb,
-    camera_error_cb error_cb,
-    camera_t **cam) {
+bool camera_create(const parameters_t *params, camera_frame_cb frame_cb,
+                   camera_error_cb error_cb, camera_t **cam) {
     std::unique_ptr<CameraPriv> camp = std::make_unique<CameraPriv>();
 
     set_hdr(params->hdr);
@@ -174,7 +175,7 @@ bool camera_create(
     } else if (strcmp(params->log_level, "info") == 0) {
         setenv("LIBCAMERA_LOG_LEVELS", "*:INFO", 1);
     } else if (strcmp(params->log_level, "warn") == 0) {
-       setenv("LIBCAMERA_LOG_LEVELS", "*:WARN", 1);
+        setenv("LIBCAMERA_LOG_LEVELS", "*:WARN", 1);
     } else { // error
         setenv("LIBCAMERA_LOG_LEVELS", "*:ERROR", 1);
     }
@@ -189,8 +190,9 @@ bool camera_create(
         return false;
     }
 
-    std::vector<std::shared_ptr<Camera>> cameras = get_cameras(camp->camera_manager.get());
-    if (params->camera_id >= cameras.size()){
+    std::vector<std::shared_ptr<Camera>> cameras =
+        get_cameras(camp->camera_manager.get());
+    if (params->camera_id >= cameras.size()) {
         set_error("selected camera is not available");
         return false;
     }
@@ -207,7 +209,7 @@ bool camera_create(
         return false;
     }
 
-    std::vector<StreamRole> stream_roles = { StreamRole::VideoRecording };
+    std::vector<StreamRole> stream_roles = {StreamRole::VideoRecording};
     if (params->mode != NULL) {
         stream_roles.push_back(StreamRole::Raw);
     }
@@ -215,7 +217,8 @@ bool camera_create(
         stream_roles.push_back(StreamRole::Viewfinder);
     }
 
-    std::unique_ptr<CameraConfiguration> conf = camp->camera->generateConfiguration(stream_roles);
+    std::unique_ptr<CameraConfiguration> conf =
+        camp->camera->generateConfiguration(stream_roles);
     if (conf == NULL) {
         set_error("Camera.generateConfiguration() failed");
         return false;
@@ -242,7 +245,8 @@ bool camera_create(
 
     if (params->secondary_width != 0) {
         StreamConfiguration &secondary_stream_conf = conf->at(cur_stream++);
-        secondary_stream_conf.size = Size(params->secondary_width, params->secondary_height);
+        secondary_stream_conf.size =
+            Size(params->secondary_width, params->secondary_height);
         secondary_stream_conf.bufferCount = video_stream_conf.bufferCount;
         secondary_stream_conf.pixelFormat = formats::YUV420;
     }
@@ -275,7 +279,8 @@ bool camera_create(
     }
 
     for (unsigned int i = 0; i < params->buffer_count; i++) {
-        std::unique_ptr<Request> request = camp->camera->createRequest((uint64_t)camp.get());
+        std::unique_ptr<Request> request =
+            camp->camera->createRequest((uint64_t)camp.get());
         if (request == NULL) {
             set_error("createRequest() failed");
             return false;
@@ -283,8 +288,8 @@ bool camera_create(
         camp->requests.push_back(std::move(request));
     }
 
-    // allocate DMA buffers manually instead of using default buffers provided by libcamera.
-    // this improves performance by a lot.
+    // allocate DMA buffers manually instead of using default buffers provided
+    // by libcamera. this improves performance by a lot.
     // https://forums.raspberrypi.com/viewtopic.php?t=352554
     // https://github.com/raspberrypi/rpicam-apps/blob/6de1ab6a899df35f929b2a15c0831780bd8e750e/core/rpicam_app.cpp#L1012
 
@@ -316,8 +321,11 @@ bool camera_create(
             camp->frame_buffers.push_back(std::make_unique<FrameBuffer>(plane));
             FrameBuffer *fb = camp->frame_buffers.back().get();
 
-            if (stream == camp->video_stream || stream == camp->secondary_stream) {
-                camp->mapped_buffers[fb] = (uint8_t*)mmap(NULL, stream_conf.frameSize, PROT_READ | PROT_WRITE, MAP_SHARED, plane[0].fd.get(), 0);
+            if (stream == camp->video_stream ||
+                stream == camp->secondary_stream) {
+                camp->mapped_buffers[fb] = (uint8_t *)mmap(
+                    NULL, stream_conf.frameSize, PROT_READ | PROT_WRITE,
+                    MAP_SHARED, plane[0].fd.get(), 0);
             }
 
             res = camp->requests.at(i)->addBuffer(stream, fb);
@@ -371,18 +379,18 @@ static void on_request_complete(Request *request) {
         long diff = timespec_sub(&now, &camp->last_secondary_frame_time);
 
         if (diff >= camp->secondary_deltat) {
-            timespec_add(&camp->last_secondary_frame_time, camp->secondary_deltat);
-            FrameBuffer *secondary_buffer = request->buffers().at(camp->secondary_stream);
+            timespec_add(&camp->last_secondary_frame_time,
+                         camp->secondary_deltat);
+            FrameBuffer *secondary_buffer =
+                request->buffers().at(camp->secondary_stream);
             secondary_buffer_mapped = camp->mapped_buffers.at(secondary_buffer);
         }
     }
 
-    camp->frame_cb(
-        camp->mapped_buffers.at(buffer),
-        buffer->planes()[0].fd.get(),
-        buffer_size(buffer->planes()),
-        buffer->metadata().timestamp / 1000,
-        secondary_buffer_mapped);
+    camp->frame_cb(camp->mapped_buffers.at(buffer),
+                   buffer->planes()[0].fd.get(), buffer_size(buffer->planes()),
+                   buffer->metadata().timestamp / 1000,
+                   secondary_buffer_mapped);
 
     request->reuse(Request::ReuseFlag::ReuseBuffers);
 
@@ -410,7 +418,8 @@ int camera_get_colorspace(camera_t *cam) {
     return get_v4l2_colorspace(camp->video_stream->configuration().colorSpace);
 }
 
-static void fill_dynamic_controls(ControlList *ctrls, const parameters_t *params) {
+static void fill_dynamic_controls(ControlList *ctrls,
+                                  const parameters_t *params) {
     ctrls->set(controls::Brightness, params->brightness);
     ctrls->set(controls::Contrast, params->contrast);
     ctrls->set(controls::Saturation, params->saturation);
@@ -457,7 +466,8 @@ static void fill_dynamic_controls(ControlList *ctrls, const parameters_t *params
 
     if (params->awb_gain_red > 0 && params->awb_gain_blue > 0) {
         ctrls->set(controls::ColourGains,
-            Span<const float, 2>({params->awb_gain_red, params->awb_gain_blue}));
+                   Span<const float, 2>(
+                       {params->awb_gain_red, params->awb_gain_blue}));
     }
 
     int denoise_mode;
@@ -491,7 +501,8 @@ static void fill_dynamic_controls(ControlList *ctrls, const parameters_t *params
     ctrls->set(controls::ExposureValue, params->ev);
 
     int64_t frame_time = (int64_t)(((float)1000000) / params->fps);
-    ctrls->set(controls::FrameDurationLimits, Span<const int64_t, 2>({ frame_time, frame_time }));
+    ctrls->set(controls::FrameDurationLimits,
+               Span<const int64_t, 2>({frame_time, frame_time}));
 }
 
 bool camera_start(camera_t *cam) {
@@ -503,22 +514,23 @@ bool camera_start(camera_t *cam) {
 
     if (camp->camera->controls().count(&controls::AfMode) > 0) {
         if (camp->params->af_window != NULL) {
-            std::optional<Rectangle> opt = camp->camera->properties().get(properties::ScalerCropMaximum);
+            std::optional<Rectangle> opt =
+                camp->camera->properties().get(properties::ScalerCropMaximum);
             Rectangle sensor_area;
             try {
                 sensor_area = opt.value();
-            } catch(const std::bad_optional_access& exc) {
+            } catch (const std::bad_optional_access &exc) {
                 set_error("get(ScalerCropMaximum) failed");
                 return false;
             }
 
             Rectangle afwindows_rectangle[1];
 
-            afwindows_rectangle[0] = Rectangle(
-                camp->params->af_window->x * sensor_area.width,
-                camp->params->af_window->y * sensor_area.height,
-                camp->params->af_window->width * sensor_area.width,
-                camp->params->af_window->height * sensor_area.height);
+            afwindows_rectangle[0] =
+                Rectangle(camp->params->af_window->x * sensor_area.width,
+                          camp->params->af_window->y * sensor_area.height,
+                          camp->params->af_window->width * sensor_area.width,
+                          camp->params->af_window->height * sensor_area.height);
 
             afwindows_rectangle[0].translateBy(sensor_area.topLeft());
             camp->ctrls->set(controls::AfMetering, controls::AfMeteringWindows);
@@ -556,25 +568,26 @@ bool camera_start(camera_t *cam) {
         if (strcmp(camp->params->af_mode, "auto") == 0) {
             camp->ctrls->set(controls::AfTrigger, controls::AfTriggerStart);
         } else if (strcmp(camp->params->af_mode, "manual") == 0) {
-            camp->ctrls->set(controls::LensPosition, camp->params->lens_position);
+            camp->ctrls->set(controls::LensPosition,
+                             camp->params->lens_position);
         }
     }
 
     if (camp->params->roi != NULL) {
-        std::optional<Rectangle> opt = camp->camera->properties().get(properties::ScalerCropMaximum);
+        std::optional<Rectangle> opt =
+            camp->camera->properties().get(properties::ScalerCropMaximum);
         Rectangle sensor_area;
         try {
             sensor_area = opt.value();
-        } catch(const std::bad_optional_access& exc) {
+        } catch (const std::bad_optional_access &exc) {
             set_error("get(ScalerCropMaximum) failed");
             return false;
         }
 
-        Rectangle crop(
-            camp->params->roi->x * sensor_area.width,
-            camp->params->roi->y * sensor_area.height,
-            camp->params->roi->width * sensor_area.width,
-            camp->params->roi->height * sensor_area.height);
+        Rectangle crop(camp->params->roi->x * sensor_area.width,
+                       camp->params->roi->y * sensor_area.height,
+                       camp->params->roi->width * sensor_area.width,
+                       camp->params->roi->height * sensor_area.height);
         crop.translateBy(sensor_area.topLeft());
         camp->ctrls->set(controls::ScalerCrop, crop);
     }
