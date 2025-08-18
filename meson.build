@@ -101,9 +101,9 @@ text_font = custom_target(
 sources = [
     'base64.c',
     'camera.cpp',
-    'encoder_hard_h264.c',
+    'encoder_hardware_h264.c',
     'encoder_jpeg.c',
-    'encoder_soft_h264.c',
+    'encoder_software_h264.c',
     'encoder.c',
     'main.c',
     'parameters.c',

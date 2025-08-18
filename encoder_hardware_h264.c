@@ -13,7 +13,7 @@
 
 #include <linux/videodev2.h>
 
-#include "encoder_hard_h264.h"
+#include "encoder_hardware_h264.h"
 
 static char errbuf[256];
 
@@ -23,7 +23,7 @@ static void set_error(const char *format, ...) {
     vsnprintf(errbuf, 256, format, args);
 }
 
-const char *encoder_hard_h264_get_error() {
+const char *encoder_hardware_h264_get_error() {
     return errbuf;
 }
 
@@ -32,12 +32,12 @@ typedef struct {
     int fd;
     void **capture_buffers;
     int cur_buffer;
-    encoder_hard_h264_output_cb output_cb;
+    encoder_hardware_h264_output_cb output_cb;
     pthread_t output_thread;
-} encoder_hard_h264_priv_t;
+} encoder_hardware_h264_priv_t;
 
 static void *output_thread(void *userdata) {
-    encoder_hard_h264_priv_t *encp = (encoder_hard_h264_priv_t *)userdata;
+    encoder_hardware_h264_priv_t *encp = (encoder_hardware_h264_priv_t *)userdata;
 
     struct v4l2_buffer buf = {0};
     struct v4l2_plane planes[VIDEO_MAX_PLANES] = {0};
@@ -96,12 +96,12 @@ static bool fill_dynamic_params(int fd, const parameters_t *params) {
     return true;
 }
 
-bool encoder_hard_h264_create(const parameters_t *params, int stride, int colorspace, encoder_hard_h264_output_cb output_cb, encoder_hard_h264_t **enc) {
-    *enc = malloc(sizeof(encoder_hard_h264_priv_t));
-    encoder_hard_h264_priv_t *encp = (encoder_hard_h264_priv_t *)(*enc);
-    memset(encp, 0, sizeof(encoder_hard_h264_priv_t));
+bool encoder_hardware_h264_create(const parameters_t *params, int stride, int colorspace, encoder_hardware_h264_output_cb output_cb, encoder_hardware_h264_t **enc) {
+    *enc = malloc(sizeof(encoder_hardware_h264_priv_t));
+    encoder_hardware_h264_priv_t *encp = (encoder_hardware_h264_priv_t *)(*enc);
+    memset(encp, 0, sizeof(encoder_hardware_h264_priv_t));
 
-    encp->fd = open(ENCODER_HARD_H264_DEVICE, O_RDWR, 0);
+    encp->fd = open(ENCODER_HARDWARE_H264_DEVICE, O_RDWR, 0);
     if (encp->fd < 0) {
         set_error("unable to open device");
         goto failed;
@@ -276,8 +276,8 @@ failed:
     return false;
 }
 
-void encoder_hard_h264_encode(encoder_hard_h264_t *enc, uint8_t *buffer_mapped, int buffer_fd, size_t buffer_size, uint64_t timestamp) {
-    encoder_hard_h264_priv_t *encp = (encoder_hard_h264_priv_t *)enc;
+void encoder_hardware_h264_encode(encoder_hardware_h264_t *enc, uint8_t *buffer_mapped, int buffer_fd, size_t buffer_size, uint64_t timestamp) {
+    encoder_hardware_h264_priv_t *encp = (encoder_hardware_h264_priv_t *)enc;
 
     int index = encp->cur_buffer++;
     encp->cur_buffer %= encp->params->buffer_count;
@@ -297,12 +297,12 @@ void encoder_hard_h264_encode(encoder_hard_h264_t *enc, uint8_t *buffer_mapped, 
     buf.m.planes[0].length = buffer_size;
     int res = ioctl(encp->fd, VIDIOC_QBUF, &buf);
     if (res != 0) {
-        fprintf(stderr, "encoder_hard_h264_encode(): ioctl(VIDIOC_QBUF) failed\n");
+        fprintf(stderr, "encoder_hardware_h264_encode(): ioctl(VIDIOC_QBUF) failed\n");
         // it happens when the raspberry is under pressure. do not exit.
     }
 }
 
-void encoder_hard_h264_reload_params(encoder_hard_h264_t *enc, const parameters_t *params) {
-     encoder_hard_h264_priv_t *encp = (encoder_hard_h264_priv_t *)enc;
+void encoder_hardware_h264_reload_params(encoder_hardware_h264_t *enc, const parameters_t *params) {
+     encoder_hardware_h264_priv_t *encp = (encoder_hardware_h264_priv_t *)enc;
      fill_dynamic_params(encp->fd, params);
 }

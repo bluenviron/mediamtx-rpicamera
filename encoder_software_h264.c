@@ -7,7 +7,7 @@
 #include <linux/videodev2.h>
 #include <x264.h>
 
-#include "encoder_soft_h264.h"
+#include "encoder_software_h264.h"
 
 static char errbuf[256];
 
@@ -17,24 +17,24 @@ static void set_error(const char *format, ...) {
     vsnprintf(errbuf, 256, format, args);
 }
 
-const char *encoder_soft_h264_get_error() {
+const char *encoder_software_h264_get_error() {
     return errbuf;
 }
 
 typedef struct {
     const parameters_t *params;
-    encoder_soft_h264_output_cb output_cb;
+    encoder_software_h264_output_cb output_cb;
     x264_param_t x_params;
     x264_t *x_handler;
     x264_picture_t x_pic_in;
     x264_picture_t x_pic_out;
     pthread_mutex_t mutex;
-} encoder_soft_h264_priv_t;
+} encoder_software_h264_priv_t;
 
-bool encoder_soft_h264_create(const parameters_t *params, int stride, int colorspace, encoder_soft_h264_output_cb output_cb, encoder_soft_h264_t **enc) {
-    *enc = malloc(sizeof(encoder_soft_h264_priv_t));
-    encoder_soft_h264_priv_t *encp = (encoder_soft_h264_priv_t *)(*enc);
-    memset(encp, 0, sizeof(encoder_soft_h264_priv_t));
+bool encoder_software_h264_create(const parameters_t *params, int stride, int colorspace, encoder_software_h264_output_cb output_cb, encoder_software_h264_t **enc) {
+    *enc = malloc(sizeof(encoder_software_h264_priv_t));
+    encoder_software_h264_priv_t *encp = (encoder_software_h264_priv_t *)(*enc);
+    memset(encp, 0, sizeof(encoder_software_h264_priv_t));
 
     if (strcmp(params->software_h264_profile, "baseline") == 0) {
         int res = x264_param_default_preset(&encp->x_params, "ultrafast", "zerolatency");
@@ -101,8 +101,8 @@ failed:
     return false;
 }
 
-void encoder_soft_h264_encode(encoder_soft_h264_t *enc, uint8_t *buffer_mapped, int buffer_fd, size_t buffer_size, uint64_t timestamp) {
-    encoder_soft_h264_priv_t *encp = (encoder_soft_h264_priv_t *)enc;
+void encoder_software_h264_encode(encoder_software_h264_t *enc, uint8_t *buffer_mapped, int buffer_fd, size_t buffer_size, uint64_t timestamp) {
+    encoder_software_h264_priv_t *encp = (encoder_software_h264_priv_t *)enc;
 
     encp->x_pic_in.img.plane[0] = buffer_mapped; // Y
     encp->x_pic_in.img.plane[1] = encp->x_pic_in.img.plane[0] + encp->x_pic_in.img.i_stride[0] * encp->params->height; // U
@@ -122,8 +122,8 @@ void encoder_soft_h264_encode(encoder_soft_h264_t *enc, uint8_t *buffer_mapped, 
     }
 }
 
-void encoder_soft_h264_reload_params(encoder_soft_h264_t *enc, const parameters_t *params) {
-    encoder_soft_h264_priv_t *encp = (encoder_soft_h264_priv_t *)enc;
+void encoder_software_h264_reload_params(encoder_software_h264_t *enc, const parameters_t *params) {
+    encoder_software_h264_priv_t *encp = (encoder_software_h264_priv_t *)enc;
 
     pthread_mutex_lock(&encp->mutex);
 
