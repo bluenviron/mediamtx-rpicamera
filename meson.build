@@ -34,18 +34,6 @@ cpp_args = [
 add_project_arguments(c_args, language : 'c')
 add_project_arguments(cpp_args, language : 'cpp')
 
-x264_dep = dependency(
-    'x264',
-    fallback : ['x264', 'libx264_dep'],
-    default_options : [
-        'default_library=static',
-        'cli=false',
-        'strip=true',
-        'interlaced=false',
-        'bit-depth=8',
-        'chroma-format=all'
-    ])
-
 libcamera_dep = dependency(
     'libcamera',
     fallback : ['libcamera', 'libcamera_public'],
@@ -85,11 +73,19 @@ endif
 
 libjpeg_dep = dependency('libjpeg', version: '<3.0.0', static : true)
 
+openh264_dep = dependency(
+    'openh264',
+    fallback : ['openh264', 'openh264_dep'],
+    static : true,
+    default_options : [
+        'tests=disabled'
+    ])
+
 dependencies = [
-    x264_dep,
     libcamera_dep,
     freetype_dep,
-    libjpeg_dep
+    libjpeg_dep,
+    openh264_dep
 ]
 
 text_font = custom_target(
@@ -103,7 +99,7 @@ sources = [
     'camera.cpp',
     'encoder_hardware_h264.c',
     'encoder_jpeg.c',
-    'encoder_software_h264.c',
+    'encoder_software_h264.cpp',
     'encoder.c',
     'main.c',
     'parameters.c',

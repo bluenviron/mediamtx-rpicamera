@@ -9,6 +9,10 @@ typedef void (*encoder_software_h264_output_cb)(const uint8_t *buffer_mapped,
                                                 uint64_t buffer_size,
                                                 uint64_t timestamp);
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 const char *encoder_software_h264_get_error();
 bool encoder_software_h264_create(const parameters_t *params, int stride,
                                   int colorspace,
@@ -19,5 +23,9 @@ void encoder_software_h264_encode(encoder_software_h264_t *enc,
                                   size_t buffer_size, uint64_t timestamp);
 void encoder_software_h264_reload_params(encoder_software_h264_t *enc,
                                          const parameters_t *params);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
