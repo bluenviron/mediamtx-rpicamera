@@ -111,6 +111,8 @@ void encoder_software_h264_encode(encoder_software_h264_t *enc,
                                   size_t buffer_size, uint64_t timestamp) {
     encoder_software_h264_priv_t *encp = (encoder_software_h264_priv_t *)enc;
 
+    pthread_mutex_lock(&encp->mutex);
+
     encp->x_pic_in.img.plane[0] = buffer_mapped; // Y
     encp->x_pic_in.img.plane[1] =
         encp->x_pic_in.img.plane[0] +
@@ -119,8 +121,6 @@ void encoder_software_h264_encode(encoder_software_h264_t *enc,
         encp->x_pic_in.img.plane[1] +
         (encp->x_pic_in.img.i_stride[0] / 2) * (encp->params->height / 2); // V
     encp->x_pic_in.i_pts = (int64_t)timestamp;
-
-    pthread_mutex_lock(&encp->mutex);
 
     x264_nal_t *nal;
     int nal_count;

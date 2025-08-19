@@ -26,9 +26,9 @@ static void set_error(const char *format, ...) {
 const char *encoder_hardware_h264_get_error() { return errbuf; }
 
 typedef struct {
-    const parameters_t *params;
     int fd;
     void **capture_buffers;
+    int buffer_count;
     int cur_buffer;
     encoder_hardware_h264_output_cb output_cb;
     pthread_t output_thread;
@@ -259,7 +259,7 @@ bool encoder_hardware_h264_create(const parameters_t *params, int stride,
         set_error("unable to activate capture stream");
     }
 
-    encp->params = params;
+    encp->buffer_count = params->buffer_count;
     encp->cur_buffer = 0;
     encp->output_cb = output_cb;
 
@@ -284,7 +284,7 @@ void encoder_hardware_h264_encode(encoder_hardware_h264_t *enc,
     encoder_hardware_h264_priv_t *encp = (encoder_hardware_h264_priv_t *)enc;
 
     int index = encp->cur_buffer++;
-    encp->cur_buffer %= encp->params->buffer_count;
+    encp->cur_buffer %= encp->buffer_count;
 
     struct v4l2_buffer buf = {0};
     struct v4l2_plane planes[VIDEO_MAX_PLANES] = {0};

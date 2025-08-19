@@ -147,7 +147,6 @@ get_cameras(const CameraManager *camera_manager) {
 }
 
 struct CameraPriv {
-    const parameters_t *params;
     camera_frame_cb frame_cb;
     camera_error_cb error_cb;
     long secondary_deltat;
@@ -338,7 +337,6 @@ bool camera_create(const parameters_t *params, camera_frame_cb frame_cb,
 
     close(allocator_fd);
 
-    camp->params = params;
     camp->frame_cb = frame_cb;
     camp->error_cb = error_cb;
     camp->secondary_deltat = (long)(1000000000.0 / params->secondary_fps);
@@ -505,15 +503,15 @@ static void fill_dynamic_controls(ControlList *ctrls,
                Span<const int64_t, 2>({frame_time, frame_time}));
 }
 
-bool camera_start(camera_t *cam) {
+bool camera_start(camera_t *cam, parameters_t *params) {
     CameraPriv *camp = (CameraPriv *)cam;
 
     camp->ctrls = std::make_unique<ControlList>(controls::controls);
 
-    fill_dynamic_controls(camp->ctrls.get(), camp->params);
+    fill_dynamic_controls(camp->ctrls.get(), params);
 
     if (camp->camera->controls().count(&controls::AfMode) > 0) {
-        if (camp->params->af_window != NULL) {
+        if (params->af_window != NULL) {
             std::optional<Rectangle> opt =
                 camp->camera->properties().get(properties::ScalerCropMaximum);
             Rectangle sensor_area;
@@ -527,10 +525,10 @@ bool camera_start(camera_t *cam) {
             Rectangle afwindows_rectangle[1];
 
             afwindows_rectangle[0] =
-                Rectangle(camp->params->af_window->x * sensor_area.width,
-                          camp->params->af_window->y * sensor_area.height,
-                          camp->params->af_window->width * sensor_area.width,
-                          camp->params->af_window->height * sensor_area.height);
+                Rectangle(params->af_window->x * sensor_area.width,
+                          params->af_window->y * sensor_area.height,
+                          params->af_window->width * sensor_area.width,
+                          params->af_window->height * sensor_area.height);
 
             afwindows_rectangle[0].translateBy(sensor_area.topLeft());
             camp->ctrls->set(controls::AfMetering, controls::AfMeteringWindows);
@@ -538,9 +536,9 @@ bool camera_start(camera_t *cam) {
         }
 
         int af_mode;
-        if (strcmp(camp->params->af_mode, "manual") == 0) {
+        if (strcmp(params->af_mode, "manual") == 0) {
             af_mode = controls::AfModeManual;
-        } else if (strcmp(camp->params->af_mode, "continuous") == 0) {
+        } else if (strcmp(params->af_mode, "continuous") == 0) {
             af_mode = controls::AfModeContinuous;
         } else {
             af_mode = controls::AfModeAuto;
@@ -548,9 +546,9 @@ bool camera_start(camera_t *cam) {
         camp->ctrls->set(controls::AfMode, af_mode);
 
         int af_range;
-        if (strcmp(camp->params->af_range, "macro") == 0) {
+        if (strcmp(params->af_range, "macro") == 0) {
             af_range = controls::AfRangeMacro;
-        } else if (strcmp(camp->params->af_range, "full") == 0) {
+        } else if (strcmp(params->af_range, "full") == 0) {
             af_range = controls::AfRangeFull;
         } else {
             af_range = controls::AfRangeNormal;
@@ -558,22 +556,21 @@ bool camera_start(camera_t *cam) {
         camp->ctrls->set(controls::AfRange, af_range);
 
         int af_speed;
-        if (strcmp(camp->params->af_range, "fast") == 0) {
+        if (strcmp(params->af_range, "fast") == 0) {
             af_speed = controls::AfSpeedFast;
         } else {
             af_speed = controls::AfSpeedNormal;
         }
         camp->ctrls->set(controls::AfSpeed, af_speed);
 
-        if (strcmp(camp->params->af_mode, "auto") == 0) {
+        if (strcmp(params->af_mode, "auto") == 0) {
             camp->ctrls->set(controls::AfTrigger, controls::AfTriggerStart);
-        } else if (strcmp(camp->params->af_mode, "manual") == 0) {
-            camp->ctrls->set(controls::LensPosition,
-                             camp->params->lens_position);
+        } else if (strcmp(params->af_mode, "manual") == 0) {
+            camp->ctrls->set(controls::LensPosition, params->lens_position);
         }
     }
 
-    if (camp->params->roi != NULL) {
+    if (params->roi != NULL) {
         std::optional<Rectangle> opt =
             camp->camera->properties().get(properties::ScalerCropMaximum);
         Rectangle sensor_area;
@@ -584,10 +581,10 @@ bool camera_start(camera_t *cam) {
             return false;
         }
 
-        Rectangle crop(camp->params->roi->x * sensor_area.width,
-                       camp->params->roi->y * sensor_area.height,
-                       camp->params->roi->width * sensor_area.width,
-                       camp->params->roi->height * sensor_area.height);
+        Rectangle crop(params->roi->x * sensor_area.width,
+                       params->roi->y * sensor_area.height,
+                       params->roi->width * sensor_area.width,
+                       params->roi->height * sensor_area.height);
         crop.translateBy(sensor_area.topLeft());
         camp->ctrls->set(controls::ScalerCrop, crop);
     }
