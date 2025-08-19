@@ -18,6 +18,7 @@
 
 static int pipe_out_fd;
 static pthread_mutex_t pipe_out_mutex;
+static parameters_t *params;
 static camera_t *cam;
 static text_t *text;
 static encoder_t *enc;
@@ -69,17 +70,18 @@ static bool handle_command(const uint8_t *buf, uint32_t size) {
         return false;
 
     case 'c': {
-        parameters_t params;
-        bool ok = parameters_unserialize(&params, &buf[1], size - 1);
+        parameters_t *new_params;
+        bool ok = parameters_unserialize(&buf[1], size - 1, &new_params);
         if (!ok) {
             printf("skipping reloading parameters since they are invalid: %s\n",
                    parameters_get_error());
-            return true;
+            break;
         }
 
-        camera_reload_params(cam, &params);
-        encoder_reload_params(enc, &params);
-        parameters_destroy(&params);
+        camera_reload_params(cam, new_params);
+        encoder_reload_params(enc, new_params);
+        parameters_destroy(params);
+        params = new_params;
     }
     }
 
@@ -98,8 +100,7 @@ int main() {
     uint8_t *buf;
     uint32_t n = pipe_read(pipe_in_fd, &buf);
 
-    parameters_t params;
-    bool ok = parameters_unserialize(&params, &buf[1], n - 1);
+    bool ok = parameters_unserialize(&buf[1], n - 1, &params);
     free(buf);
     if (!ok) {
         pipe_write_error(pipe_out_fd, "parameters_unserialize(): %s",
@@ -110,20 +111,20 @@ int main() {
     pthread_mutex_init(&pipe_out_mutex, NULL);
     pthread_mutex_lock(&pipe_out_mutex);
 
-    ok = camera_create(&params, on_frame, on_error, &cam);
+    ok = camera_create(params, on_frame, on_error, &cam);
     if (!ok) {
         pipe_write_error(pipe_out_fd, "camera_create(): %s",
                          camera_get_error());
         return -1;
     }
 
-    ok = text_create(&params, camera_get_stride(cam), &text);
+    ok = text_create(params, camera_get_stride(cam), &text);
     if (!ok) {
         pipe_write_error(pipe_out_fd, "text_create(): %s", text_get_error());
         return -1;
     }
 
-    ok = encoder_create(&params, camera_get_stride(cam),
+    ok = encoder_create(params, camera_get_stride(cam),
                         camera_get_colorspace(cam), on_encoder_output, &enc);
     if (!ok) {
         pipe_write_error(pipe_out_fd, "encoder_create(): %s",
@@ -131,10 +132,10 @@ int main() {
         return -1;
     }
 
-    if (params.secondary_width != 0) {
+    if (params->secondary_width != 0) {
         ok = encoder_jpeg_create(
-            params.secondary_width, params.secondary_height,
-            params.secondary_mjpeg_quality, camera_get_secondary_stride(cam),
+            params->secondary_width, params->secondary_height,
+            params->secondary_mjpeg_quality, camera_get_secondary_stride(cam),
             on_jpeg_output, &enc_jpeg);
         if (!ok) {
             pipe_write_error(pipe_out_fd, "encoder_jpeg_create(): %s",
@@ -143,7 +144,7 @@ int main() {
         }
     }
 
-    ok = camera_start(cam);
+    ok = camera_start(cam, params);
     if (!ok) {
         pipe_write_error(pipe_out_fd, "camera_start(): %s", camera_get_error());
         return -1;

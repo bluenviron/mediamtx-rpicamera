@@ -62,8 +62,8 @@ extern "C" {
 #endif
 
 const char *parameters_get_error();
-bool parameters_unserialize(parameters_t *params, const uint8_t *buf,
-                            size_t buf_size);
+bool parameters_unserialize(const uint8_t *buf, size_t buf_size,
+                            parameters_t **params);
 void parameters_destroy(parameters_t *params);
 
 #ifdef __cplusplus
