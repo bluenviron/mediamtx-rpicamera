@@ -205,7 +205,7 @@ bool encoder_hardware_h264_create(const parameters_t *params, int stride,
         goto failed;
     }
 
-    reqbufs.count = params->capture_buffer_count;
+    reqbufs.count = params->buffer_count;
     reqbufs.type = V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE;
     reqbufs.memory = V4L2_MEMORY_MMAP;
     res = ioctl(encp->fd, VIDIOC_REQBUFS, &reqbufs);

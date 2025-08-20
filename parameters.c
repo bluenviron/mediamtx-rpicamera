@@ -153,8 +153,7 @@ bool parameters_unserialize(const uint8_t *buf, size_t buf_size,
 
     free(copy);
 
-    (*params)->buffer_count = 6;
-    (*params)->capture_buffer_count = (*params)->buffer_count * 2;
+    (*params)->buffer_count = 3;
 
     return true;
 

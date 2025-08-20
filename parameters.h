@@ -54,7 +54,6 @@ typedef struct {
 
     // private
     unsigned int buffer_count;
-    unsigned int capture_buffer_count;
 } parameters_t;
 
 #ifdef __cplusplus
