@@ -3,7 +3,7 @@
 !/subprojects/packagefiles
 !/subprojects/freetype.wrap
 !/subprojects/libcamera.wrap
-!/subprojects/x264.wrap
 !/subprojects/libpisp.wrap
 !/subprojects/openssl.wrap
 !/subprojects/libjpeg-turbo.wrap
+!/subprojects/openh264.wrap

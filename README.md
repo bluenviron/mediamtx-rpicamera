@@ -103,5 +103,5 @@ All the code in this repository is released under the [MIT License](LICENSE). Co
 
 * libcamera, released under the [MIT license](https://git.libcamera.org/libcamera/libcamera.git/tree/LICENSES)
 * freetype, released under the [FreeType license](https://github.com/freetype/freetype/blob/master/LICENSE.TXT)
-* x264, released under the [GPL v2](https://gitlab.freedesktop.org/gstreamer/meson-ports/x264/-/blob/meson/COPYING)
 * libjpeg-turbo, released under a [Modified BSD 3-clause License](https://github.com/libjpeg-turbo/libjpeg-turbo?tab=License-1-ov-file#the-modified-3-clause-bsd-license)
+* openh264, released under the [BSD 2-clause License](https://github.com/cisco/openh264/blob/master/LICENSE)
