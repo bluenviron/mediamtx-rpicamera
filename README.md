@@ -4,7 +4,7 @@ Raspberry Pi Camera component for [MediaMTX](https://github.com/bluenviron/media
 
 This is a C-based executable that pulls the Raspberry Camera video feed, encodes it and makes the compressed video available to the server, while listening for incoming commands.
 
-This is embedded into all MediaMTX releases and shouldn't normally be downloaded unless you want to recompile it.
+This is embedded into all MediaMTX releases and shouldn't be usually downloaded unless you want to recompile it.
 
 ## Compile
 
@@ -85,17 +85,7 @@ This is embedded into all MediaMTX releases and shouldn't normally be downloaded
 
 ## Install
 
-1. Download MediaMTX source code and open a terminal in it
-
-2. Run `go generate ./...`
-
-3. Copy `build/mtxrpicam_32` and/or `build/mtxrpicam_64` inside `internal/staticsources/rpicamera/`, overriding existing folders
-
-4. Compile MediaMTX
-
-   ```sh
-   go build .
-   ```
+Check MediaMTX documentation for instructions on how to use the compiled component.
 
 ## License
 
