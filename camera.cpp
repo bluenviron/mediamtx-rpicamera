@@ -494,7 +494,12 @@ static void fill_dynamic_controls(ControlList *ctrls,
     }
     ctrls->set(controls::AeMeteringMode, metering_mode);
 
-    ctrls->set(controls::AnalogueGain, params->gain);
+    if (params->gain != 0.f) {
+        ctrls->set(controls::AnalogueGainMode, controls::AnalogueGainModeManual);
+        ctrls->set(controls::AnalogueGain, params->gain);
+    } else {
+        ctrls->set(controls::AnalogueGainMode, controls::AnalogueGainModeAuto);
+    }
 
     ctrls->set(controls::ExposureValue, params->ev);
 
