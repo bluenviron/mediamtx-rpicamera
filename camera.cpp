@@ -488,8 +488,6 @@ static void fill_dynamic_controls(ControlList *ctrls,
         ctrls->set(controls::ExposureTimeMode, controls::ExposureTimeModeAuto);
     }
 
-    ctrls->set(controls::ExposureTime, params->shutter);
-
     int metering_mode;
     if (strcmp(params->metering, "spot") == 0) {
         metering_mode = controls::MeteringSpot;
