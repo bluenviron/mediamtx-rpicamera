@@ -480,7 +480,13 @@ static void fill_dynamic_controls(ControlList *ctrls,
     }
     ctrls->set(controls::draft::NoiseReductionMode, denoise_mode);
 
-    ctrls->set(controls::ExposureTime, params->shutter);
+    if (params->shutter != 0.f) {
+        ctrls->set(controls::ExposureTimeMode,
+                   controls::ExposureTimeModeManual);
+        ctrls->set(controls::ExposureTime, params->shutter);
+    } else {
+        ctrls->set(controls::ExposureTimeMode, controls::ExposureTimeModeAuto);
+    }
 
     int metering_mode;
     if (strcmp(params->metering, "spot") == 0) {
@@ -494,7 +500,13 @@ static void fill_dynamic_controls(ControlList *ctrls,
     }
     ctrls->set(controls::AeMeteringMode, metering_mode);
 
-    ctrls->set(controls::AnalogueGain, params->gain);
+    if (params->gain != 0.f) {
+        ctrls->set(controls::AnalogueGainMode,
+                   controls::AnalogueGainModeManual);
+        ctrls->set(controls::AnalogueGain, params->gain);
+    } else {
+        ctrls->set(controls::AnalogueGainMode, controls::AnalogueGainModeAuto);
+    }
 
     ctrls->set(controls::ExposureValue, params->ev);
 
