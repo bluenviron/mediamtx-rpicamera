@@ -8,7 +8,7 @@ This is embedded into all MediaMTX releases and shouldn't be usually downloaded 
 
 ## Compile
 
-1. You must be on a Raspberry Pi, running Raspberry Pi OS Bullseye
+1. You must be on a Raspberry Pi, running Raspberry Pi OS Bullseye.
 
 2. Install build dependencies:
 
@@ -36,7 +36,7 @@ This is embedded into all MediaMTX releases and shouldn't be usually downloaded 
 
 ## Compile against an external libcamera
 
-1. You must be on a Raspberry Pi, running Raspberry Pi OS Bullseye
+1. You must be on a Raspberry Pi, running Raspberry Pi OS Bullseye. The external libcamera must have a version &le; 0.50.
 
 2. Install build dependencies:
 
