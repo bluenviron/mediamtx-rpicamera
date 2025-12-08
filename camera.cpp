@@ -346,7 +346,7 @@ bool camera_create(const parameters_t *params, camera_frame_cb frame_cb,
     return true;
 }
 
-static int buffer_size(const std::vector<FrameBuffer::Plane> &planes) {
+static int buffer_size(Span<const FrameBuffer::Plane> planes) {
     int size = 0;
     for (const FrameBuffer::Plane &plane : planes) {
         size += plane.length;
