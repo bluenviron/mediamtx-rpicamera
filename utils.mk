@@ -13,10 +13,7 @@ help:
 	@echo "  build              build binaries for all architectures"
 	@echo "  build_32           build binaries for 32-bit architectures"
 	@echo "  build_64           build binaries for 64-bit architectures"
-	@echo "  test_bullseye_32   test binaries on Raspberry Pi OS Bullseye 32-bit"
-	@echo "  test_bullseye_64   test binaries on Raspberry Pi OS Bullseye 64-bit"
-	@echo "  test_bookworm_32   test binaries on Raspberry Pi OS Bookworm 32-bit"
-	@echo "  test_bookworm_64   test binaries on Raspberry Pi OS Bookworm 64-bit"
+	@echo "  test               run tests on all supported OSes and architectures"
 	@echo ""
 
 include scripts/*.mk
