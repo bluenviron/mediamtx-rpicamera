@@ -7,3 +7,5 @@
 !/subprojects/openssl.wrap
 !/subprojects/libjpeg-turbo.wrap
 !/subprojects/openh264.wrap
+/.git
+/scripts
