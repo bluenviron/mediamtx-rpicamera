@@ -1,6 +1,7 @@
 ALPINE_IMAGE = alpine:3.22
-BULLSEYE_IMAGE = debian:bullseye-slim
-BOOKWORM_IMAGE = debian:bookworm-slim
+DEBIAN_BULLSEYE_IMAGE = debian:bullseye-slim
+DEBIAN_BOOKWORM_IMAGE = debian:bookworm-slim
+DEBIAN_TRIXIE_IMAGE = debian:trixie-slim
 
 help:
 	@echo "usage: make [action]"

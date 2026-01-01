@@ -100,3 +100,35 @@ jobs:
     - run: cd build && tar xvf mtxrpicam_64.tar.gz
 
     - run: make -f utils.mk test_bookworm_64
+
+  test_trixie_32:
+    needs: build_32
+    runs-on: ubuntu-22.04
+
+    steps:
+    - uses: actions/checkout@v6
+
+    - uses: actions/download-artifact@v7
+      with:
+        name: mtxrpicam_32.tar.gz
+        path: build/
+
+    - run: cd build && tar xvf mtxrpicam_32.tar.gz
+
+    - run: make -f utils.mk test_trixie_32
+
+  test_trixie_64:
+    needs: build_64
+    runs-on: ubuntu-22.04
+
+    steps:
+    - uses: actions/checkout@v6
+
+    - uses: actions/download-artifact@v7
+      with:
+        name: mtxrpicam_64.tar.gz
+        path: build/
+
+    - run: cd build && tar xvf mtxrpicam_64.tar.gz
+
+    - run: make -f utils.mk test_trixie_64
