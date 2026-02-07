@@ -16,6 +16,7 @@
 #include <libcamera/framebuffer_allocator.h>
 #include <libcamera/property_ids.h>
 #include <libcamera/transform.h>
+#include <libcamera/version.h>
 #include <linux/dma-buf.h>
 #include <linux/dma-heap.h>
 #include <linux/videodev2.h>
@@ -346,7 +347,12 @@ bool camera_create(const parameters_t *params, camera_frame_cb frame_cb,
     return true;
 }
 
+#if LIBCAMERA_VERSION_MAJOR > 0 ||                                             \
+    (LIBCAMERA_VERSION_MAJOR == 0 && LIBCAMERA_VERSION_MINOR >= 6)
+static int buffer_size(const Span<const FrameBuffer::Plane> &planes) {
+#else
 static int buffer_size(const std::vector<FrameBuffer::Plane> &planes) {
+#endif
     int size = 0;
     for (const FrameBuffer::Plane &plane : planes) {
         size += plane.length;

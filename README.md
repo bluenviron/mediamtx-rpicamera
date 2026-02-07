@@ -46,7 +46,7 @@ This is embedded into all MediaMTX releases and shouldn't be usually downloaded 
    - Raspberry Pi OS Bookworm
    - Raspberry Pi OS Bullseye
 
-   The external libcamera must have version &le; 0.50.
+   The external libcamera must have version &ge; 0.5.0 and &le; 0.70.
 
 2. Install build dependencies:
 
