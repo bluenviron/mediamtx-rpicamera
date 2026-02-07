@@ -462,11 +462,9 @@ static void fill_dynamic_controls(ControlList *ctrls,
     }
     ctrls->set(controls::AwbMode, awb_mode);
 
-    if (params->awb_gain_red > 0 && params->awb_gain_blue > 0) {
-        ctrls->set(controls::ColourGains,
-                   Span<const float, 2>(
-                       {params->awb_gain_red, params->awb_gain_blue}));
-    }
+    ctrls->set(
+        controls::ColourGains,
+        Span<const float, 2>({params->awb_gain_red, params->awb_gain_blue}));
 
     int denoise_mode;
     if (strcmp(params->denoise, "cdn_off") == 0) {
