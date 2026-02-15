@@ -23,6 +23,8 @@ int camera_get_secondary_stride(camera_t *cam);
 int camera_get_colorspace(camera_t *cam);
 bool camera_start(camera_t *cam, parameters_t *params);
 void camera_reload_params(camera_t *cam, const parameters_t *params);
+void camera_stop(camera_t *cam);
+void camera_destroy(camera_t *cam);
 
 #ifdef __cplusplus
 }

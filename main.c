@@ -165,5 +165,9 @@ int main() {
         }
     }
 
+    camera_stop(cam);
+    encoder_destroy(enc);
+    camera_destroy(cam);
+
     return 0;
 }

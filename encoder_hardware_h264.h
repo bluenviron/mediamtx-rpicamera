@@ -21,5 +21,6 @@ void encoder_hardware_h264_encode(encoder_hardware_h264_t *enc,
                                   size_t buffer_size, uint64_t timestamp);
 void encoder_hardware_h264_reload_params(encoder_hardware_h264_t *enc,
                                          const parameters_t *params);
+void encoder_hardware_h264_destroy(encoder_hardware_h264_t *enc);
 
 #endif

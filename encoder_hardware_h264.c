@@ -32,7 +32,16 @@ typedef struct {
     int cur_buffer;
     encoder_hardware_h264_output_cb output_cb;
     pthread_t output_thread;
+    pthread_mutex_t destroyed_mutex;
+    bool destroyed;
 } encoder_hardware_h264_priv_t;
+
+static bool is_destroyed_safe(encoder_hardware_h264_priv_t *encp) {
+    pthread_mutex_lock(&encp->destroyed_mutex);
+    bool is_destroyed = encp->destroyed;
+    pthread_mutex_unlock(&encp->destroyed_mutex);
+    return is_destroyed;
+}
 
 static void *output_thread(void *userdata) {
     encoder_hardware_h264_priv_t *encp =
@@ -47,6 +56,10 @@ static void *output_thread(void *userdata) {
         buf.m.planes = planes;
         int res = ioctl(encp->fd, VIDIOC_DQBUF, &buf);
         if (res != 0) {
+            if (is_destroyed_safe(encp)) {
+                break;
+            }
+
             fprintf(stderr, "output_thread(): ioctl(VIDIOC_DQBUF, "
                             "V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE) failed\n");
             continue;
@@ -55,6 +68,10 @@ static void *output_thread(void *userdata) {
         buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE;
         res = ioctl(encp->fd, VIDIOC_DQBUF, &buf);
         if (res != 0) {
+            if (is_destroyed_safe(encp)) {
+                break;
+            }
+
             fprintf(stderr, "output_thread(): ioctl(VIDIOC_DQBUF, "
                             "V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE) failed\n");
             continue;
@@ -262,6 +279,8 @@ bool encoder_hardware_h264_create(const parameters_t *params, int stride,
     encp->buffer_count = params->buffer_count;
     encp->cur_buffer = 0;
     encp->output_cb = output_cb;
+    pthread_mutex_init(&encp->destroyed_mutex, NULL);
+    encp->destroyed = false;
 
     pthread_create(&encp->output_thread, NULL, output_thread, encp);
 
@@ -311,4 +330,38 @@ void encoder_hardware_h264_reload_params(encoder_hardware_h264_t *enc,
                                          const parameters_t *params) {
     encoder_hardware_h264_priv_t *encp = (encoder_hardware_h264_priv_t *)enc;
     fill_dynamic_params(encp->fd, params);
+}
+
+void encoder_hardware_h264_destroy(encoder_hardware_h264_t *enc) {
+    encoder_hardware_h264_priv_t *encp = (encoder_hardware_h264_priv_t *)enc;
+
+    pthread_mutex_lock(&encp->destroyed_mutex);
+    encp->destroyed = true;
+    pthread_mutex_unlock(&encp->destroyed_mutex);
+
+    enum v4l2_buf_type type;
+
+    type = V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE;
+    ioctl(encp->fd, VIDIOC_STREAMOFF, &type);
+
+    type = V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE;
+    ioctl(encp->fd, VIDIOC_STREAMOFF, &type);
+
+    pthread_join(encp->output_thread, NULL);
+    pthread_mutex_destroy(&encp->destroyed_mutex);
+
+    struct v4l2_requestbuffers reqbufs = {0};
+    reqbufs.count = 0;
+    reqbufs.type = V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE;
+    reqbufs.memory = V4L2_MEMORY_DMABUF;
+    ioctl(encp->fd, VIDIOC_REQBUFS, &reqbufs);
+
+    reqbufs.type = V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE;
+    reqbufs.memory = V4L2_MEMORY_MMAP;
+    ioctl(encp->fd, VIDIOC_REQBUFS, &reqbufs);
+
+    close(encp->fd);
+
+    free(encp->capture_buffers);
+    free(encp);
 }

@@ -27,6 +27,8 @@ typedef void (*encode_cb)(void *enc, uint8_t *mapped_buffer, int buffer_fd,
 
 typedef void (*reload_params_cb)(void *enc, const parameters_t *params);
 
+typedef void (*destroy_cb)(void *enc);
+
 static bool supports_hardware_h264() {
     int fd = open(ENCODER_HARDWARE_H264_DEVICE, O_RDWR, 0);
     if (fd < 0) {
@@ -54,6 +56,7 @@ typedef struct {
     void *implementation;
     encode_cb encode;
     reload_params_cb reload_params;
+    destroy_cb destroy;
 } encoder_priv_t;
 
 bool encoder_create(const parameters_t *params, int stride, int colorspace,
@@ -86,6 +89,7 @@ bool encoder_create(const parameters_t *params, int stride, int colorspace,
         encp->implementation = hardware_h264;
         encp->encode = encoder_hardware_h264_encode;
         encp->reload_params = encoder_hardware_h264_reload_params;
+        encp->destroy = encoder_hardware_h264_destroy;
     } else {
         printf("using software H264 encoder\n");
 
@@ -118,4 +122,14 @@ void encoder_encode(encoder_t *enc, uint8_t *mapped_buffer, int buffer_fd,
 void encoder_reload_params(encoder_t *enc, const parameters_t *params) {
     encoder_priv_t *encp = (encoder_priv_t *)enc;
     encp->reload_params(encp->implementation, params);
+}
+
+void encoder_destroy(encoder_t *enc) {
+    encoder_priv_t *encp = (encoder_priv_t *)enc;
+
+    if (encp->destroy != NULL) {
+        encp->destroy(encp->implementation);
+    }
+
+    free(encp);
 }
