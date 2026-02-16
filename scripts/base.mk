@@ -1,10 +1,10 @@
 enable_multiarch:
-	docker run --privileged --rm tonistiigi/binfmt --install arm64,arm
+	docker run --privileged --rm $(BINFMT_IMAGE) --install arm64,arm
 
 ############################################################################
 
 define DOCKERFILE_BASE_BULLSEYE_32
-FROM --platform=linux/arm/v7 $(DEBIAN_BULLSEYE_IMAGE)
+FROM $(DEBIAN_BULLSEYE_IMAGE)
 
 # even though the base image is arm v7,
 # Raspbian libraries and compilers provide arm v6 compatibility.
@@ -25,10 +25,10 @@ endef
 export DOCKERFILE_BASE_BULLSEYE_32
 
 base_bullseye_32: enable_multiarch
-	echo "$$DOCKERFILE_BASE_BULLSEYE_32" | docker build - -t base_bullseye_32
+	echo "$$DOCKERFILE_BASE_BULLSEYE_32" | docker build --platform=linux/arm/v7 - -t base_bullseye_32
 
 define DOCKERFILE_BASE_BULLSEYE_64
-FROM --platform=linux/arm64 $(DEBIAN_BULLSEYE_IMAGE)
+FROM $(DEBIAN_BULLSEYE_IMAGE)
 
 RUN apt update \
 	&& apt install -y wget gpg \
@@ -39,12 +39,12 @@ endef
 export DOCKERFILE_BASE_BULLSEYE_64
 
 base_bullseye_64: enable_multiarch
-	echo "$$DOCKERFILE_BASE_BULLSEYE_64" | docker build - -t base_bullseye_64
+	echo "$$DOCKERFILE_BASE_BULLSEYE_64" | docker build --platform=linux/arm64 - -t base_bullseye_64
 
 ############################################################################
 
 define DOCKERFILE_BASE_BOOKWORM_32
-FROM --platform=linux/arm/v7 $(DEBIAN_BOOKWORM_IMAGE)
+FROM $(DEBIAN_BOOKWORM_IMAGE)
 
 # even though the base image is arm v7,
 # Raspbian libraries and compilers provide arm v6 compatibility.
@@ -65,10 +65,10 @@ endef
 export DOCKERFILE_BASE_BOOKWORM_32
 
 base_bookworm_32: enable_multiarch
-	echo "$$DOCKERFILE_BASE_BOOKWORM_32" | docker build - -t base_bookworm_32
+	echo "$$DOCKERFILE_BASE_BOOKWORM_32" | docker build --platform=linux/arm/v7 - -t base_bookworm_32
 
 define DOCKERFILE_BASE_BOOKWORM_64
-FROM --platform=linux/arm64 $(DEBIAN_BOOKWORM_IMAGE)
+FROM $(DEBIAN_BOOKWORM_IMAGE)
 
 RUN apt update \
 	&& apt install -y wget gpg \
@@ -79,12 +79,12 @@ endef
 export DOCKERFILE_BASE_BOOKWORM_64
 
 base_bookworm_64: enable_multiarch
-	echo "$$DOCKERFILE_BASE_BOOKWORM_64" | docker build - -t base_bookworm_64
+	echo "$$DOCKERFILE_BASE_BOOKWORM_64" | docker build --platform=linux/arm64 - -t base_bookworm_64
 
 ############################################################################
 
 define DOCKERFILE_BASE_TRIXIE_32
-FROM --platform=linux/arm/v7 $(DEBIAN_TRIXIE_IMAGE)
+FROM $(DEBIAN_TRIXIE_IMAGE)
 
 # even though the base image is arm v7,
 # Raspbian libraries and compilers provide arm v6 compatibility.
@@ -113,10 +113,10 @@ endef
 export DOCKERFILE_BASE_TRIXIE_32
 
 base_trixie_32: enable_multiarch
-	echo "$$DOCKERFILE_BASE_TRIXIE_32" | docker build - -t base_trixie_32
+	echo "$$DOCKERFILE_BASE_TRIXIE_32" | docker build --platform=linux/arm/v7 - -t base_trixie_32
 
 define DOCKERFILE_BASE_TRIXIE_64
-FROM --platform=linux/arm64 $(DEBIAN_TRIXIE_IMAGE)
+FROM $(DEBIAN_TRIXIE_IMAGE)
 
 RUN apt update \
 	&& apt install -y wget gpg \
@@ -130,4 +130,4 @@ endef
 export DOCKERFILE_BASE_TRIXIE_64
 
 base_trixie_64: enable_multiarch
-	echo "$$DOCKERFILE_BASE_TRIXIE_64" | docker build - -t base_trixie_64
+	echo "$$DOCKERFILE_BASE_TRIXIE_64" | docker build --platform=linux/arm64 - -t base_trixie_64

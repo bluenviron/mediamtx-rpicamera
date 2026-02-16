@@ -1,7 +1,7 @@
 build: build_32 build_64
 
 define DOCKERFILE_BUILD_32
-FROM --platform=linux/arm/v7 base_bullseye_32
+FROM base_bullseye_32
 RUN apt update && apt install -y --no-install-recommends \
 	g++ \
 	xxd \
@@ -20,12 +20,12 @@ endef
 export DOCKERFILE_BUILD_32
 
 build_32: base_bullseye_32
-	echo "$$DOCKERFILE_BUILD_32" | docker build . -f - -t build_32
+	echo "$$DOCKERFILE_BUILD_32" | docker build --platform=linux/arm/v7 . -f - -t build_32
 	mkdir -p build
 	docker run --rm -v $(shell pwd):/o build_32 sh -c "rm -rf /o/build/mtxrpicam_32 && mv /s/build/mtxrpicam_32 /o/build/"
 
 define DOCKERFILE_BUILD_64
-FROM --platform=linux/arm64 base_bullseye_64
+FROM base_bullseye_64
 RUN apt update && apt install -y --no-install-recommends \
 	g++ \
 	make \
@@ -46,6 +46,6 @@ endef
 export DOCKERFILE_BUILD_64
 
 build_64: base_bullseye_64
-	echo "$$DOCKERFILE_BUILD_64" | docker build . -f - -t build_64
+	echo "$$DOCKERFILE_BUILD_64" | docker build --platform=linux/arm64 . -f - -t build_64
 	mkdir -p build
 	docker run --rm -v $(shell pwd):/o build_64 sh -c "rm -rf /o/build/mtxrpicam_64 && mv /s/build/mtxrpicam_64 /o/build/"
