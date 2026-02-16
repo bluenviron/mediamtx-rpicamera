@@ -162,6 +162,8 @@ struct CameraPriv {
     std::map<FrameBuffer *, uint8_t *> mapped_buffers;
     struct timespec last_secondary_frame_time;
     bool in_error;
+    std::mutex stopped_mutex;
+    bool stopped;
 };
 
 bool camera_create(const parameters_t *params, camera_frame_cb frame_cb,
@@ -404,7 +406,12 @@ static void on_request_complete(Request *request) {
         camp->ctrls->clear();
     }
 
-    camp->camera->queueRequest(request);
+    {
+        std::lock_guard<std::mutex> lock(camp->stopped_mutex);
+        if (!camp->stopped) {
+            camp->camera->queueRequest(request);
+        }
+    }
 }
 
 int camera_get_stride(camera_t *cam) {
@@ -631,4 +638,33 @@ void camera_reload_params(camera_t *cam, const parameters_t *params) {
 
     std::lock_guard<std::mutex> lock(camp->ctrls_mutex);
     fill_dynamic_controls(camp->ctrls.get(), params);
+}
+
+void camera_stop(camera_t *cam) {
+    CameraPriv *camp = (CameraPriv *)cam;
+
+    {
+        std::lock_guard<std::mutex> lock(camp->stopped_mutex);
+        camp->stopped = true;
+    }
+    camp->camera->stop();
+}
+
+void camera_destroy(camera_t *cam) {
+    CameraPriv *camp = (CameraPriv *)cam;
+
+    camp->camera->release();
+    camp->camera.reset();
+
+    for (auto &pair : camp->mapped_buffers) {
+        size_t buffer_size = 0;
+        for (const auto &plane : pair.first->planes()) {
+            buffer_size += plane.length;
+        }
+        munmap(pair.second, buffer_size);
+    }
+
+    camp->camera_manager->stop();
+
+    delete camp;
 }
