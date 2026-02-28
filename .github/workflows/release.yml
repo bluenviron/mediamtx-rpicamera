@@ -8,6 +8,7 @@ on:
 permissions:
   id-token: write
   attestations: write
+  artifact-metadata: write
   contents: write
 
 jobs:
@@ -60,7 +61,7 @@ jobs:
 
     - run: cd binaries && sha256sum -b * > checksums.sha256
 
-    - uses: actions/attest-build-provenance@v3
+    - uses: actions/attest@v4
       with:
         subject-path: '${{ github.workspace }}/binaries/*'
 
