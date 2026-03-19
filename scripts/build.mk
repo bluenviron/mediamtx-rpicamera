@@ -3,16 +3,16 @@ build: build_32 build_64
 define DOCKERFILE_BUILD_32
 FROM base_bullseye_32
 RUN apt update && apt install -y --no-install-recommends \
-	g++ \
-	xxd \
-	wget \
-	git \
-	cmake \
-	meson \
-	pkg-config \
-	python3-jinja2 \
-	python3-yaml \
-	python3-ply
+    g++ \
+    xxd \
+    wget \
+    git \
+    cmake \
+    meson \
+    pkg-config \
+    python3-jinja2 \
+    python3-yaml \
+    python3-ply
 WORKDIR /s
 COPY . .
 RUN meson setup build && DESTDIR=./prefix ninja -C build install
@@ -27,18 +27,18 @@ build_32: base_bullseye_32
 define DOCKERFILE_BUILD_64
 FROM base_bullseye_64
 RUN apt update && apt install -y --no-install-recommends \
-	g++ \
-	make \
-	xxd \
-	wget \
-	git \
-	cmake \
-	meson \
-	patch \
-	pkg-config \
-	python3-jinja2 \
-	python3-yaml \
-	python3-ply
+    g++ \
+    make \
+    xxd \
+    wget \
+    git \
+    cmake \
+    meson \
+    patch \
+    pkg-config \
+    python3-jinja2 \
+    python3-yaml \
+    python3-ply
 WORKDIR /s
 COPY . .
 RUN meson setup build && DESTDIR=./prefix ninja -C build install
