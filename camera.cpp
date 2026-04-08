@@ -402,7 +402,9 @@ static void on_request_complete(Request *request) {
 
     {
         std::lock_guard<std::mutex> lock(camp->ctrls_mutex);
-        request->controls() = *camp->ctrls;
+        request->controls().merge(
+            *camp->ctrls,
+            libcamera::ControlList::MergePolicy::OverwriteExisting);
         camp->ctrls->clear();
     }
 
