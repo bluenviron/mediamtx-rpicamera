@@ -1,6 +1,6 @@
 define DOCKERFILE_FORMAT
 FROM $(ALPINE_IMAGE)
-RUN apk add --no-cache clang20-extra-tools
+RUN apk add --no-cache clang21-extra-tools
 endef
 export DOCKERFILE_FORMAT
 
