@@ -1,3 +1,4 @@
+#include <pthread.h>
 #include <sys/time.h>
 #include <time.h>
 
@@ -57,8 +58,34 @@ static void extended_strftime(char *buffer, size_t bufsize, const char *format,
     str_replace(buffer, bufsize, "%f", str_usec);
 }
 
+static bool load_library(FT_Library *plibrary, FT_Face *pface) {
+    int error = FT_Init_FreeType(plibrary);
+    if (error) {
+        set_error("FT_Init_FreeType() failed");
+        return false;
+    }
+
+    error = FT_New_Memory_Face(*plibrary, text_font_ttf, sizeof(text_font_ttf),
+                               0, pface);
+    if (error) {
+        FT_Done_FreeType(*plibrary);
+        set_error("FT_New_Memory_Face() failed");
+        return false;
+    }
+
+    error = FT_Set_Pixel_Sizes(*pface, 25, 25);
+    if (error) {
+        FT_Done_Face(*pface);
+        FT_Done_FreeType(*plibrary);
+        set_error("FT_Set_Pixel_Sizes() failed");
+        return false;
+    }
+
+    return true;
+}
+
 typedef struct {
-    bool enabled;
+    pthread_mutex_t mutex;
     char *text_overlay;
     int stride;
     int height;
@@ -71,35 +98,23 @@ bool text_create(const parameters_t *params, int stride, text_t **text) {
     text_priv_t *textp = (text_priv_t *)(*text);
     memset(textp, 0, sizeof(text_priv_t));
 
-    textp->enabled = params->text_overlay_enable;
     textp->text_overlay = strdup(params->text_overlay);
     textp->stride = stride;
     textp->height = params->height;
 
-    if (textp->enabled) {
-        int error = FT_Init_FreeType(&textp->library);
-        if (error) {
-            set_error("FT_Init_FreeType() failed");
-            goto failed;
-        }
-
-        error = FT_New_Memory_Face(textp->library, text_font_ttf,
-                                   sizeof(text_font_ttf), 0, &textp->face);
-        if (error) {
-            set_error("FT_New_Memory_Face() failed");
-            goto failed;
-        }
-
-        error = FT_Set_Pixel_Sizes(textp->face, 25, 25);
-        if (error) {
-            set_error("FT_Set_Pixel_Sizes() failed");
+    if (params->text_overlay_enable) {
+        bool ok = load_library(&textp->library, &textp->face);
+        if (!ok) {
             goto failed;
         }
     }
 
+    pthread_mutex_init(&textp->mutex, NULL);
+
     return true;
 
 failed:
+    free(textp->text_overlay);
     free(textp);
 
     return false;
@@ -176,10 +191,49 @@ static int get_text_width(FT_Face face, const char *text) {
     return ret;
 }
 
+void text_reload_params(text_t *text, const parameters_t *params) {
+    text_priv_t *textp = (text_priv_t *)text;
+
+    pthread_mutex_lock(&textp->mutex);
+
+    free(textp->text_overlay);
+    textp->text_overlay = strdup(params->text_overlay);
+
+    if (params->text_overlay_enable && textp->library == NULL) {
+        bool ok = load_library(&textp->library, &textp->face);
+        if (!ok) {
+            textp->face = NULL;
+            textp->library = NULL;
+        }
+    } else if (!params->text_overlay_enable && textp->library != NULL) {
+        FT_Done_Face(textp->face);
+        FT_Done_FreeType(textp->library);
+        textp->face = NULL;
+        textp->library = NULL;
+    }
+
+    pthread_mutex_unlock(&textp->mutex);
+}
+
+void text_destroy(text_t *text) {
+    text_priv_t *textp = (text_priv_t *)text;
+
+    if (textp->library != NULL) {
+        FT_Done_Face(textp->face);
+        FT_Done_FreeType(textp->library);
+    }
+
+    free(textp->text_overlay);
+    pthread_mutex_destroy(&textp->mutex);
+    free(textp);
+}
+
 void text_draw(text_t *text, uint8_t *buf) {
     text_priv_t *textp = (text_priv_t *)text;
 
-    if (textp->enabled) {
+    pthread_mutex_lock(&textp->mutex);
+
+    if (textp->library != NULL) {
         struct timeval now;
         gettimeofday(&now, NULL);
 
@@ -206,4 +260,6 @@ void text_draw(text_t *text, uint8_t *buf) {
             x += textp->face->glyph->advance.x >> 6;
         }
     }
+
+    pthread_mutex_unlock(&textp->mutex);
 }
