@@ -79,6 +79,7 @@ static bool handle_command(const uint8_t *buf, uint32_t size) {
         }
 
         camera_reload_params(cam, new_params);
+        text_reload_params(text, new_params);
         encoder_reload_params(enc, new_params);
         parameters_destroy(params);
         params = new_params;
@@ -167,6 +168,7 @@ int main() {
 
     camera_stop(cam);
     encoder_destroy(enc);
+    text_destroy(text);
     camera_destroy(cam);
 
     return 0;
