@@ -24,7 +24,8 @@ typedef struct {
     pthread_t thread;
     bool data_queued;
     uint8_t *data_buffer;
-    uint64_t data_timestamp;
+    uint64_t data_dts;
+    uint64_t data_ntp;
     encoder_jpeg_output_cb output_cb;
 } encoder_jpeg_priv_t;
 
@@ -86,7 +87,8 @@ static void *thread_main(void *userdata) {
         }
 
         uint8_t *buffer = encp->data_buffer;
-        uint64_t timestamp = encp->data_timestamp;
+        uint64_t dts = encp->data_dts;
+        uint64_t ntp = encp->data_ntp;
         encp->data_queued = false;
 
         pthread_cond_signal(&encp->cond);
@@ -98,7 +100,7 @@ static void *thread_main(void *userdata) {
         save_as_jpeg(encp->width, encp->height, encp->quality, encp->stride,
                      buffer, &out_buf, &out_size);
 
-        encp->output_cb(out_buf, out_size, timestamp);
+        encp->output_cb(out_buf, out_size, dts, ntp);
 
         free(out_buf);
     }
@@ -125,8 +127,8 @@ bool encoder_jpeg_create(int width, int height, int quality, int stride,
     return true;
 }
 
-void encoder_jpeg_encode(encoder_jpeg_t *enc, uint8_t *buffer,
-                         uint64_t timestamp) {
+void encoder_jpeg_encode(encoder_jpeg_t *enc, uint8_t *buffer, uint64_t dts,
+                         uint64_t ntp) {
     encoder_jpeg_priv_t *encp = (encoder_jpeg_priv_t *)enc;
 
     pthread_mutex_lock(&encp->mutex);
@@ -137,7 +139,8 @@ void encoder_jpeg_encode(encoder_jpeg_t *enc, uint8_t *buffer,
 
     encp->data_queued = true;
     encp->data_buffer = buffer;
-    encp->data_timestamp = timestamp;
+    encp->data_dts = dts;
+    encp->data_ntp = ntp;
 
     pthread_cond_signal(&encp->cond);
 

@@ -393,10 +393,24 @@ static void on_request_complete(Request *request) {
         }
     }
 
+    uint64_t dts = buffer->metadata().timestamp / 1000;
+
+    struct timespec dts_now_ts;
+    clock_gettime(CLOCK_MONOTONIC, &dts_now_ts);
+    uint64_t dts_now =
+        (uint64_t)dts_now_ts.tv_sec * 1000000 + dts_now_ts.tv_nsec / 1000;
+
+    struct timespec ntp_ts;
+    clock_gettime(CLOCK_REALTIME, &ntp_ts);
+    uint64_t ntp = (uint64_t)ntp_ts.tv_sec * 1000000 + ntp_ts.tv_nsec / 1000;
+
+    // improve NTP precision by subtracting the difference between now and the
+    // moment the frame was taken
+    ntp -= dts_now - dts;
+
     camp->frame_cb(camp->mapped_buffers.at(buffer),
                    buffer->planes()[0].fd.get(), buffer_size(buffer->planes()),
-                   buffer->metadata().timestamp / 1000,
-                   secondary_buffer_mapped);
+                   dts, ntp, secondary_buffer_mapped);
 
     request->reuse(Request::ReuseFlag::ReuseBuffers);
 

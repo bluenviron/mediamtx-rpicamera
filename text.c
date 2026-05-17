@@ -1,5 +1,4 @@
 #include <pthread.h>
-#include <sys/time.h>
 #include <time.h>
 
 #include <ft2build.h>
@@ -228,17 +227,19 @@ void text_destroy(text_t *text) {
     free(textp);
 }
 
-void text_draw(text_t *text, uint8_t *buf) {
+void text_draw(text_t *text, uint8_t *buf, uint64_t ntp) {
     text_priv_t *textp = (text_priv_t *)text;
 
     pthread_mutex_lock(&textp->mutex);
 
     if (textp->library != NULL) {
-        struct timeval now;
-        gettimeofday(&now, NULL);
+        struct timeval tv = {
+            .tv_sec = ntp / 1000000,
+            .tv_usec = ntp % 1000000,
+        };
 
         char buffer[256];
-        extended_strftime(buffer, 256, textp->text_overlay, &now);
+        extended_strftime(buffer, 256, textp->text_overlay, &tv);
 
         draw_rect(buf, textp->stride, textp->height, 7, 7,
                   get_text_width(textp->face, buffer) + 10, 34);

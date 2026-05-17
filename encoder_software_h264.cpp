@@ -32,11 +32,12 @@ typedef struct {
     pthread_t thread;
     bool data_queued;
     uint8_t *data_buffer;
-    uint64_t data_timestamp;
+    uint64_t data_dts;
+    uint64_t data_ntp;
 } encoder_software_h264_priv_t;
 
 static void encode(encoder_software_h264_priv_t *encp, uint8_t *buffer,
-                   uint64_t timestamp) {
+                   uint64_t dts, uint64_t ntp) {
     pthread_mutex_lock(&encp->mutex);
 
     encp->pic.pData[0] = buffer; // Y
@@ -45,7 +46,7 @@ static void encode(encoder_software_h264_priv_t *encp, uint8_t *buffer,
     encp->pic.pData[2] =
         encp->pic.pData[1] +
         (encp->pic.iStride[0] / 2) * (encp->params->height / 2); // V
-    encp->pic.uiTimeStamp = timestamp / 1000000;
+    encp->pic.uiTimeStamp = dts / 1000000;
 
     memset(&encp->info, 0, sizeof(SFrameBSInfo));
     int res = encp->encoder->EncodeFrame(&encp->pic, &encp->info);
@@ -66,7 +67,7 @@ static void encode(encoder_software_h264_priv_t *encp, uint8_t *buffer,
                 frame_size += layer_info->pNalLengthInByte[j];
             }
 
-            encp->output_cb(layer_info->pBsBuf, frame_size, timestamp);
+            encp->output_cb(layer_info->pBsBuf, frame_size, dts, ntp);
         }
     }
 }
@@ -83,14 +84,15 @@ static void *thread_main(void *userdata) {
         }
 
         uint8_t *buffer = encp->data_buffer;
-        uint64_t timestamp = encp->data_timestamp;
+        uint64_t dts = encp->data_dts;
+        uint64_t ntp = encp->data_ntp;
         encp->data_queued = false;
 
         pthread_cond_signal(&encp->queue_cond);
 
         pthread_mutex_unlock(&encp->queue_mutex);
 
-        encode(encp, buffer, timestamp);
+        encode(encp, buffer, dts, ntp);
     }
 
     return NULL;
@@ -205,7 +207,8 @@ failed:
 
 void encoder_software_h264_encode(encoder_software_h264_t *enc,
                                   uint8_t *buffer_mapped, int buffer_fd,
-                                  size_t buffer_size, uint64_t timestamp) {
+                                  size_t buffer_size, uint64_t dts,
+                                  uint64_t ntp) {
     encoder_software_h264_priv_t *encp = (encoder_software_h264_priv_t *)enc;
 
     pthread_mutex_lock(&encp->queue_mutex);
@@ -216,7 +219,8 @@ void encoder_software_h264_encode(encoder_software_h264_t *enc,
 
     encp->data_queued = true;
     encp->data_buffer = buffer_mapped;
-    encp->data_timestamp = timestamp;
+    encp->data_dts = dts;
+    encp->data_ntp = ntp;
 
     pthread_cond_signal(&encp->queue_cond);
 

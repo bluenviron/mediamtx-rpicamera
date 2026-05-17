@@ -23,7 +23,7 @@ static void set_error(const char *format, ...) {
 const char *encoder_get_error() { return errbuf; }
 
 typedef void (*encode_cb)(void *enc, uint8_t *mapped_buffer, int buffer_fd,
-                          size_t size, uint64_t ts);
+                          size_t size, uint64_t dts, uint64_t ntp);
 
 typedef void (*reload_params_cb)(void *enc, const parameters_t *params);
 
@@ -114,9 +114,10 @@ failed:
 }
 
 void encoder_encode(encoder_t *enc, uint8_t *mapped_buffer, int buffer_fd,
-                    size_t size, uint64_t ts) {
+                    size_t size, uint64_t dts, uint64_t ntp) {
     encoder_priv_t *encp = (encoder_priv_t *)enc;
-    encp->encode(encp->implementation, mapped_buffer, buffer_fd, size, ts);
+    encp->encode(encp->implementation, mapped_buffer, buffer_fd, size, dts,
+                 ntp);
 }
 
 void encoder_reload_params(encoder_t *enc, const parameters_t *params) {
