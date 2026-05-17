@@ -28,6 +28,7 @@ const char *encoder_hardware_h264_get_error() { return errbuf; }
 typedef struct {
     int fd;
     void **capture_buffers;
+    uint64_t *ntp_timestamps;
     int buffer_count;
     int cur_buffer;
     encoder_hardware_h264_output_cb output_cb;
@@ -80,10 +81,11 @@ static void *output_thread(void *userdata) {
         const uint8_t *mapped =
             (const uint8_t *)encp->capture_buffers[buf.index];
         int size = buf.m.planes[0].bytesused;
-        uint64_t ts = ((uint64_t)buf.timestamp.tv_sec * (uint64_t)1000000) +
-                      (uint64_t)buf.timestamp.tv_usec;
+        uint64_t dts = ((uint64_t)buf.timestamp.tv_sec * (uint64_t)1000000) +
+                       (uint64_t)buf.timestamp.tv_usec;
+        uint64_t ntp = encp->ntp_timestamps[buf.index];
 
-        encp->output_cb(mapped, size, ts);
+        encp->output_cb(mapped, size, dts, ntp);
 
         res = ioctl(encp->fd, VIDIOC_QBUF, &buf);
         if (res != 0) {
@@ -232,6 +234,7 @@ bool encoder_hardware_h264_create(const parameters_t *params, int stride,
     }
 
     encp->capture_buffers = malloc(sizeof(void *) * reqbufs.count);
+    encp->ntp_timestamps = malloc(sizeof(uint64_t) * reqbufs.count);
 
     struct v4l2_plane planes[VIDEO_MAX_PLANES];
     struct v4l2_buffer buffer = {0};
@@ -299,11 +302,14 @@ failed:
 
 void encoder_hardware_h264_encode(encoder_hardware_h264_t *enc,
                                   uint8_t *buffer_mapped, int buffer_fd,
-                                  size_t buffer_size, uint64_t timestamp) {
+                                  size_t buffer_size, uint64_t dts,
+                                  uint64_t ntp) {
     encoder_hardware_h264_priv_t *encp = (encoder_hardware_h264_priv_t *)enc;
 
     int index = encp->cur_buffer++;
     encp->cur_buffer %= encp->buffer_count;
+
+    encp->ntp_timestamps[index] = ntp;
 
     struct v4l2_buffer buf = {0};
     struct v4l2_plane planes[VIDEO_MAX_PLANES] = {0};
@@ -312,8 +318,8 @@ void encoder_hardware_h264_encode(encoder_hardware_h264_t *enc,
     buf.field = V4L2_FIELD_NONE;
     buf.memory = V4L2_MEMORY_DMABUF;
     buf.length = 1;
-    buf.timestamp.tv_sec = timestamp / 1000000;
-    buf.timestamp.tv_usec = timestamp % 1000000;
+    buf.timestamp.tv_sec = dts / 1000000;
+    buf.timestamp.tv_usec = dts % 1000000;
     buf.m.planes = planes;
     buf.m.planes[0].m.fd = buffer_fd;
     buf.m.planes[0].bytesused = buffer_size;
@@ -363,5 +369,6 @@ void encoder_hardware_h264_destroy(encoder_hardware_h264_t *enc) {
     close(encp->fd);
 
     free(encp->capture_buffers);
+    free(encp->ntp_timestamps);
     free(encp);
 }

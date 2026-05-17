@@ -9,7 +9,7 @@ typedef void encoder_hardware_h264_t;
 
 typedef void (*encoder_hardware_h264_output_cb)(const uint8_t *buffer_mapped,
                                                 uint64_t buffer_size,
-                                                uint64_t timestamp);
+                                                uint64_t dts, uint64_t ntp);
 
 const char *encoder_hardware_h264_get_error();
 bool encoder_hardware_h264_create(const parameters_t *params, int stride,
@@ -18,7 +18,8 @@ bool encoder_hardware_h264_create(const parameters_t *params, int stride,
                                   encoder_hardware_h264_t **enc);
 void encoder_hardware_h264_encode(encoder_hardware_h264_t *enc,
                                   uint8_t *buffer_mapped, int buffer_fd,
-                                  size_t buffer_size, uint64_t timestamp);
+                                  size_t buffer_size, uint64_t dts,
+                                  uint64_t ntp);
 void encoder_hardware_h264_reload_params(encoder_hardware_h264_t *enc,
                                          const parameters_t *params);
 void encoder_hardware_h264_destroy(encoder_hardware_h264_t *enc);
