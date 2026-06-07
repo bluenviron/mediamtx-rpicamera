@@ -103,7 +103,7 @@ Check MediaMTX documentation for instructions on how to use the compiled compone
 
 All the code in this repository is released under the [MIT License](LICENSE). Compiled binaries include or make use of some third-party dependencies:
 
-* libcamera, released under the [MIT license](https://git.libcamera.org/libcamera/libcamera.git/tree/LICENSES)
-* freetype, released under the [FreeType license](https://github.com/freetype/freetype/blob/master/LICENSE.TXT)
-* libjpeg-turbo, released under a [Modified BSD 3-clause License](https://github.com/libjpeg-turbo/libjpeg-turbo?tab=License-1-ov-file#the-modified-3-clause-bsd-license)
+* libcamera, released under the [LGPL-2.1 License](https://github.com/raspberrypi/libcamera/blob/main/COPYING.rst)
+* freetype, released under the [FreeType License](https://github.com/freetype/freetype/blob/master/LICENSE.TXT)
+* libjpeg-turbo, released under a [Modified BSD 3-clause License](https://github.com/libjpeg-turbo/libjpeg-turbo/blob/main/LICENSE.md)
 * openh264, released under the [BSD 2-clause License](https://github.com/cisco/openh264/blob/master/LICENSE)
