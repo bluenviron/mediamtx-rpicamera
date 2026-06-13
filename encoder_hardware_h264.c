@@ -166,8 +166,11 @@ bool encoder_hardware_h264_create(const parameters_t *params, int stride,
         goto failed;
     }
 
+    // send SPS/PPS before every IDR frame.
+    // This is to avoid a small time window in which SPS/PPS are not available,
+    // neither in the SDP and neither in-band.
     ctrl.id = V4L2_CID_MPEG_VIDEO_REPEAT_SEQ_HEADER;
-    ctrl.value = 0;
+    ctrl.value = 1;
     res = ioctl(encp->fd, VIDIOC_S_CTRL, &ctrl);
     if (res != 0) {
         set_error("unable to set REPEAT_SEQ_HEADER");
