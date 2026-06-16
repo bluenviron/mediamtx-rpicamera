@@ -6,8 +6,8 @@ enable_multiarch:
 define DOCKERFILE_BASE_BULLSEYE_32
 FROM $(DEBIAN_BULLSEYE_IMAGE)
 
-# even though the base image is arm v7,
-# Raspbian libraries and compilers provide arm v6 compatibility.
+# even though the base image is armv7,
+# Raspbian libraries and compilers provide armv6 compatibility.
 
 RUN apt update \
     && apt install -y wget gpg \
@@ -47,8 +47,8 @@ base_bullseye_64: enable_multiarch
 define DOCKERFILE_BASE_BOOKWORM_32
 FROM $(DEBIAN_BOOKWORM_IMAGE)
 
-# even though the base image is arm v7,
-# Raspbian libraries and compilers provide arm v6 compatibility.
+# even though the base image is armv7,
+# Raspbian libraries and compilers provide armv6 compatibility.
 
 RUN apt update \
     && apt install -y wget gpg \
@@ -88,8 +88,8 @@ base_bookworm_64: enable_multiarch
 define DOCKERFILE_BASE_TRIXIE_32
 FROM $(DEBIAN_TRIXIE_IMAGE)
 
-# even though the base image is arm v7,
-# Raspbian libraries and compilers provide arm v6 compatibility.
+# even though the base image is armv7,
+# Raspbian libraries and compilers provide armv6 compatibility.
 
 RUN apt update \
     && apt install -y wget gpg \

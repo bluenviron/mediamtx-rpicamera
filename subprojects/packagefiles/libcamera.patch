@@ -6,23 +6,23 @@ index 00000000..2a1cd140
 @@ -0,0 +1 @@
 +0.5.0+mediamtx
 diff --git a/meson.build b/meson.build
-index 9ba5e2ca..2977ab6e 100644
+index 9cd73462..a5b36647 100644
 --- a/meson.build
 +++ b/meson.build
 @@ -2,7 +2,7 @@
 
  project('libcamera', 'c', 'cpp',
-     meson_version : '>= 0.63',
--    version : '0.5.0',
+     meson_version : '>= 1.0.1',
+-    version : '0.7.1',
 +    version : '9.9.9',
      default_options : [
          'werror=true',
          'warning_level=2',
 diff --git a/src/ipa/meson.build b/src/ipa/meson.build
-index 0ad4631d..101b41ad 100644
+index eb7846e4..dbef52bd 100644
 --- a/src/ipa/meson.build
 +++ b/src/ipa/meson.build
-@@ -8,12 +8,9 @@ ipa_install_dir = libcamera_libdir
+@@ -8,12 +8,9 @@ ipa_install_dir = libcamera_libdir / 'ipa'
  ipa_data_dir = libcamera_datadir / 'ipa'
  ipa_sysconf_dir = libcamera_sysconfdir / 'ipa'
 
@@ -38,10 +38,10 @@ index 0ad4631d..101b41ad 100644
  summary({
           'IPA_CONFIG_DIR' : config_h.get('IPA_CONFIG_DIR'),
 diff --git a/src/libcamera/meson.build b/src/libcamera/meson.build
-index cae7e5c0..3f119aff 100644
+index 6aedacbd..bf3d756f 100644
 --- a/src/libcamera/meson.build
 +++ b/src/libcamera/meson.build
-@@ -64,7 +64,7 @@ includes = [
+@@ -68,7 +68,7 @@ includes = [
 
  libcamera_deps = []
 
@@ -50,9 +50,9 @@ index cae7e5c0..3f119aff 100644
  libthreads = dependency('threads')
 
  subdir('base')
-@@ -85,24 +85,9 @@ endif
- libudev = dependency('libudev', required : get_option('udev'))
- libyaml = dependency('yaml-0.1', required : false)
+@@ -87,24 +87,9 @@ libyaml = dependency('yaml-0.1', default_options : [
+     'werror=false',
+ ])
 
 -# Use one of gnutls or libcrypto (provided by OpenSSL), trying gnutls first.
 -libcrypto = dependency('gnutls', required : false)
@@ -105,3 +105,16 @@ index 8c54a2e2..b455d7a4 100644
 
  summary({
           'IPA_PROXY_DIR' : config_h.get('IPA_PROXY_DIR'),
+diff --git a/src/apps/common/meson.build b/src/apps/common/meson.build
+index 5b683390..d5ffabd7 100644
+--- a/src/apps/common/meson.build
++++ b/src/apps/common/meson.build
+@@ -7,7 +7,7 @@ apps_sources = files([
+     'stream_options.cpp',
+ ])
+
+-apps_cpp_args = []
++apps_cpp_args = ['-Wno-restrict']
+
+ if libevent.found()
+     apps_sources += files([
