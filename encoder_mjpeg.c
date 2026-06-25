@@ -8,11 +8,11 @@
 
 #include <jpeglib.h>
 
-#include "encoder_jpeg.h"
+#include "encoder_mjpeg.h"
 
 static char errbuf[256];
 
-const char *encoder_jpeg_get_error() { return errbuf; }
+const char *encoder_mjpeg_get_error() { return errbuf; }
 
 typedef struct {
     int width;
@@ -26,8 +26,8 @@ typedef struct {
     uint8_t *data_buffer;
     uint64_t data_dts;
     uint64_t data_ntp;
-    encoder_jpeg_output_cb output_cb;
-} encoder_jpeg_priv_t;
+    encoder_mjpeg_output_cb output_cb;
+} encoder_mjpeg_priv_t;
 
 static void save_as_jpeg(unsigned int width, unsigned int height,
                          unsigned int quality, unsigned int stride,
@@ -77,7 +77,7 @@ static void save_as_jpeg(unsigned int width, unsigned int height,
 }
 
 static void *thread_main(void *userdata) {
-    encoder_jpeg_priv_t *encp = (encoder_jpeg_priv_t *)userdata;
+    encoder_mjpeg_priv_t *encp = (encoder_mjpeg_priv_t *)userdata;
 
     while (true) {
         pthread_mutex_lock(&encp->mutex);
@@ -108,16 +108,17 @@ static void *thread_main(void *userdata) {
     return NULL;
 }
 
-bool encoder_jpeg_create(int width, int height, int quality, int stride,
-                         encoder_jpeg_output_cb output_cb,
-                         encoder_jpeg_t **enc) {
-    *enc = malloc(sizeof(encoder_jpeg_priv_t));
-    encoder_jpeg_priv_t *encp = (encoder_jpeg_priv_t *)(*enc);
-    memset(encp, 0, sizeof(encoder_jpeg_priv_t));
+bool encoder_mjpeg_create(bool is_secondary, const parameters_t *params,
+                          int stride, encoder_mjpeg_output_cb output_cb,
+                          encoder_mjpeg_t **enc) {
+    *enc = malloc(sizeof(encoder_mjpeg_priv_t));
+    encoder_mjpeg_priv_t *encp = (encoder_mjpeg_priv_t *)(*enc);
+    memset(encp, 0, sizeof(encoder_mjpeg_priv_t));
 
-    encp->width = width;
-    encp->height = height;
-    encp->quality = quality;
+    encp->width = (!is_secondary) ? params->width : params->secondary_width;
+    encp->height = (!is_secondary) ? params->height : params->secondary_height;
+    encp->quality = (!is_secondary) ? params->mjpeg_quality
+                                    : params->secondary_mjpeg_quality;
     encp->stride = stride;
     pthread_mutex_init(&encp->mutex, NULL);
     pthread_cond_init(&encp->cond, NULL);
@@ -127,9 +128,9 @@ bool encoder_jpeg_create(int width, int height, int quality, int stride,
     return true;
 }
 
-void encoder_jpeg_encode(encoder_jpeg_t *enc, uint8_t *buffer, uint64_t dts,
-                         uint64_t ntp) {
-    encoder_jpeg_priv_t *encp = (encoder_jpeg_priv_t *)enc;
+void encoder_mjpeg_encode(encoder_mjpeg_t *enc, uint8_t *buffer_mapped,
+                          int buffer_fd, uint64_t dts, uint64_t ntp) {
+    encoder_mjpeg_priv_t *encp = (encoder_mjpeg_priv_t *)enc;
 
     pthread_mutex_lock(&encp->mutex);
 
@@ -138,7 +139,7 @@ void encoder_jpeg_encode(encoder_jpeg_t *enc, uint8_t *buffer, uint64_t dts,
     }
 
     encp->data_queued = true;
-    encp->data_buffer = buffer;
+    encp->data_buffer = buffer_mapped;
     encp->data_dts = dts;
     encp->data_ntp = ntp;
 
@@ -146,3 +147,6 @@ void encoder_jpeg_encode(encoder_jpeg_t *enc, uint8_t *buffer, uint64_t dts,
 
     pthread_mutex_unlock(&encp->mutex);
 }
+
+void encoder_mjpeg_reload_params(encoder_mjpeg_t *enc,
+                                 const parameters_t *params) {}

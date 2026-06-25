@@ -98,7 +98,7 @@ sources = [
     'base64.c',
     'camera.cpp',
     'encoder_hardware_h264.c',
-    'encoder_jpeg.c',
+    'encoder_mjpeg.c',
     'encoder_software_h264.cpp',
     'encoder.c',
     'main.c',

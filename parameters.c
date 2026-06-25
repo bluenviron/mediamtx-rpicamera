@@ -136,6 +136,8 @@ bool parameters_unserialize(const uint8_t *buf, size_t buf_size,
             (*params)->h264_profile = base64_decode(val);
         } else if (strcmp(key, "H264Level") == 0) {
             (*params)->h264_level = base64_decode(val);
+        } else if (strcmp(key, "MJPEGQuality") == 0) {
+            (*params)->mjpeg_quality = atoi(val);
         } else if (strcmp(key, "SecondaryWidth") == 0) {
             (*params)->secondary_width = atoi(val);
         } else if (strcmp(key, "SecondaryHeight") == 0) {
@@ -147,9 +149,9 @@ bool parameters_unserialize(const uint8_t *buf, size_t buf_size,
         }
     }
 
-    free(copy);
-
     (*params)->buffer_count = 3;
+
+    free(copy);
 
     return true;
 

@@ -11,8 +11,8 @@ help:
 	@echo ""
 	@echo "  format             format code"
 	@echo "  build              build binaries for all architectures"
-	@echo "  build_32           build binaries for 32-bit architectures"
-	@echo "  build_64           build binaries for 64-bit architectures"
+	@echo "  build_32           build binaries for 32-bit architecture"
+	@echo "  build_64           build binaries for 64-bit architecture"
 	@echo "  test               run tests on all supported OSes and architectures"
 	@echo ""
 
