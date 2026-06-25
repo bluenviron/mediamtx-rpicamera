@@ -1,4 +1,4 @@
-ALPINE_IMAGE = alpine:3.23
+ALPINE_IMAGE = alpine:3.24
 BINFMT_IMAGE = tonistiigi/binfmt:qemu-v10.0.4
 DEBIAN_BULLSEYE_IMAGE = debian:bullseye-slim
 DEBIAN_BOOKWORM_IMAGE = debian:bookworm-slim
