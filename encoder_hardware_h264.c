@@ -29,6 +29,7 @@ typedef struct {
     int fd;
     void **capture_buffers;
     uint64_t *ntp_timestamps;
+    int frame_size;
     int buffer_count;
     int cur_buffer;
     encoder_hardware_h264_output_cb output_cb;
@@ -118,8 +119,8 @@ static bool fill_dynamic_params(int fd, const parameters_t *params) {
     return true;
 }
 
-bool encoder_hardware_h264_create(const parameters_t *params, int stride,
-                                  int colorspace,
+bool encoder_hardware_h264_create(const parameters_t *params, int frame_size,
+                                  int stride, int colorspace,
                                   encoder_hardware_h264_output_cb output_cb,
                                   encoder_hardware_h264_t **enc) {
     *enc = malloc(sizeof(encoder_hardware_h264_priv_t));
@@ -282,6 +283,7 @@ bool encoder_hardware_h264_create(const parameters_t *params, int stride,
         set_error("unable to activate capture stream");
     }
 
+    encp->frame_size = frame_size;
     encp->buffer_count = params->buffer_count;
     encp->cur_buffer = 0;
     encp->output_cb = output_cb;
@@ -305,8 +307,7 @@ failed:
 
 void encoder_hardware_h264_encode(encoder_hardware_h264_t *enc,
                                   uint8_t *buffer_mapped, int buffer_fd,
-                                  size_t buffer_size, uint64_t dts,
-                                  uint64_t ntp) {
+                                  uint64_t dts, uint64_t ntp) {
     encoder_hardware_h264_priv_t *encp = (encoder_hardware_h264_priv_t *)enc;
 
     int index = encp->cur_buffer++;
@@ -325,8 +326,8 @@ void encoder_hardware_h264_encode(encoder_hardware_h264_t *enc,
     buf.timestamp.tv_usec = dts % 1000000;
     buf.m.planes = planes;
     buf.m.planes[0].m.fd = buffer_fd;
-    buf.m.planes[0].bytesused = buffer_size;
-    buf.m.planes[0].length = buffer_size;
+    buf.m.planes[0].bytesused = encp->frame_size;
+    buf.m.planes[0].length = encp->frame_size;
     int res = ioctl(encp->fd, VIDIOC_QBUF, &buf);
     if (res != 0) {
         fprintf(stderr,

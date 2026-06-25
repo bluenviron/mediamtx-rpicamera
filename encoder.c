@@ -23,7 +23,7 @@ static void set_error(const char *format, ...) {
 const char *encoder_get_error() { return errbuf; }
 
 typedef void (*encode_cb)(void *enc, uint8_t *mapped_buffer, int buffer_fd,
-                          size_t size, uint64_t dts, uint64_t ntp);
+                          uint64_t dts, uint64_t ntp);
 
 typedef void (*reload_params_cb)(void *enc, const parameters_t *params);
 
@@ -59,8 +59,9 @@ typedef struct {
     destroy_cb destroy;
 } encoder_priv_t;
 
-bool encoder_create(const parameters_t *params, int stride, int colorspace,
-                    encoder_output_cb output_cb, encoder_t **enc) {
+bool encoder_create(const parameters_t *params, int frame_size, int stride,
+                    int colorspace, encoder_output_cb output_cb,
+                    encoder_t **enc) {
     *enc = malloc(sizeof(encoder_priv_t));
     encoder_priv_t *encp = (encoder_priv_t *)(*enc);
     memset(encp, 0, sizeof(encoder_priv_t));
@@ -79,8 +80,8 @@ bool encoder_create(const parameters_t *params, int stride, int colorspace,
         printf("using hardware H264 encoder\n");
 
         encoder_hardware_h264_t *hardware_h264;
-        bool res = encoder_hardware_h264_create(params, stride, colorspace,
-                                                output_cb, &hardware_h264);
+        bool res = encoder_hardware_h264_create(
+            params, frame_size, stride, colorspace, output_cb, &hardware_h264);
         if (!res) {
             set_error(encoder_hardware_h264_get_error());
             goto failed;
@@ -114,10 +115,9 @@ failed:
 }
 
 void encoder_encode(encoder_t *enc, uint8_t *mapped_buffer, int buffer_fd,
-                    size_t size, uint64_t dts, uint64_t ntp) {
+                    uint64_t dts, uint64_t ntp) {
     encoder_priv_t *encp = (encoder_priv_t *)enc;
-    encp->encode(encp->implementation, mapped_buffer, buffer_fd, size, dts,
-                 ntp);
+    encp->encode(encp->implementation, mapped_buffer, buffer_fd, dts, ntp);
 }
 
 void encoder_reload_params(encoder_t *enc, const parameters_t *params) {

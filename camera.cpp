@@ -349,19 +349,6 @@ bool camera_create(const parameters_t *params, camera_frame_cb frame_cb,
     return true;
 }
 
-#if LIBCAMERA_VERSION_MAJOR > 0 ||                                             \
-    (LIBCAMERA_VERSION_MAJOR == 0 && LIBCAMERA_VERSION_MINOR >= 6)
-static int buffer_size(const Span<const FrameBuffer::Plane> &planes) {
-#else
-static int buffer_size(const std::vector<FrameBuffer::Plane> &planes) {
-#endif
-    int size = 0;
-    for (const FrameBuffer::Plane &plane : planes) {
-        size += plane.length;
-    }
-    return size;
-}
-
 static void on_request_complete(Request *request) {
     CameraPriv *camp = (CameraPriv *)request->cookie();
 
@@ -409,8 +396,8 @@ static void on_request_complete(Request *request) {
     ntp -= dts_now - dts;
 
     camp->frame_cb(camp->mapped_buffers.at(buffer),
-                   buffer->planes()[0].fd.get(), buffer_size(buffer->planes()),
-                   dts, ntp, secondary_buffer_mapped);
+                   buffer->planes()[0].fd.get(), dts, ntp,
+                   secondary_buffer_mapped);
 
     request->reuse(Request::ReuseFlag::ReuseBuffers);
 
@@ -428,6 +415,11 @@ static void on_request_complete(Request *request) {
             camp->camera->queueRequest(request);
         }
     }
+}
+
+int camera_get_frame_size(camera_t *cam) {
+    CameraPriv *camp = (CameraPriv *)cam;
+    return camp->video_stream->configuration().frameSize;
 }
 
 int camera_get_stride(camera_t *cam) {
