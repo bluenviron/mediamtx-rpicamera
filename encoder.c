@@ -29,29 +29,6 @@ typedef void (*reload_params_cb)(void *enc, const parameters_t *params);
 
 typedef void (*destroy_cb)(void *enc);
 
-static bool supports_hardware_h264() {
-    int fd = open(ENCODER_HARDWARE_H264_DEVICE, O_RDWR, 0);
-    if (fd < 0) {
-        return false;
-    }
-
-    struct v4l2_capability caps = {0};
-    int res = ioctl(fd, VIDIOC_QUERYCAP, &caps);
-    if (res != 0) {
-        close(fd);
-        return false;
-    }
-
-    close(fd);
-
-    if (strncmp("bcm2835-codec", (char *)caps.card, strlen("bcm2835-codec")) ==
-        0) {
-        return true;
-    }
-
-    return false;
-}
-
 typedef struct {
     void *implementation;
     encode_cb encode;
@@ -70,10 +47,8 @@ bool encoder_create(const parameters_t *params, int frame_size, int stride,
 
     if (strcmp(params->codec, "hardwareH264") == 0) {
         hardH264 = true;
-    } else if (strcmp(params->codec, "softwareH264") == 0) {
+    } else {
         hardH264 = false;
-    } else { // auto
-        hardH264 = supports_hardware_h264();
     }
 
     if (hardH264) {

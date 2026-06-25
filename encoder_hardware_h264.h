@@ -3,8 +3,6 @@
 
 #include "parameters.h"
 
-#define ENCODER_HARDWARE_H264_DEVICE "/dev/video11"
-
 typedef void encoder_hardware_h264_t;
 
 typedef void (*encoder_hardware_h264_output_cb)(const uint8_t *buffer,

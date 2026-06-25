@@ -15,6 +15,8 @@
 
 #include "encoder_hardware_h264.h"
 
+#define DEVICE "/dev/video11"
+
 static char errbuf[256];
 
 static void set_error(const char *format, ...) {
@@ -127,7 +129,7 @@ bool encoder_hardware_h264_create(const parameters_t *params, int frame_size,
     encoder_hardware_h264_priv_t *encp = (encoder_hardware_h264_priv_t *)(*enc);
     memset(encp, 0, sizeof(encoder_hardware_h264_priv_t));
 
-    encp->fd = open(ENCODER_HARDWARE_H264_DEVICE, O_RDWR, 0);
+    encp->fd = open(DEVICE, O_RDWR, 0);
     if (encp->fd < 0) {
         set_error("unable to open device");
         goto failed;
@@ -140,9 +142,9 @@ bool encoder_hardware_h264_create(const parameters_t *params, int frame_size,
 
     struct v4l2_control ctrl = {0};
     ctrl.id = V4L2_CID_MPEG_VIDEO_H264_PROFILE;
-    if (strcmp(params->hardware_h264_profile, "baseline") == 0) {
+    if (strcmp(params->h264_profile, "baseline") == 0) {
         ctrl.value = V4L2_MPEG_VIDEO_H264_PROFILE_BASELINE;
-    } else if (strcmp(params->hardware_h264_profile, "main") == 0) {
+    } else if (strcmp(params->h264_profile, "main") == 0) {
         ctrl.value = V4L2_MPEG_VIDEO_H264_PROFILE_MAIN;
     } else {
         ctrl.value = V4L2_MPEG_VIDEO_H264_PROFILE_HIGH;
@@ -154,9 +156,9 @@ bool encoder_hardware_h264_create(const parameters_t *params, int frame_size,
     }
 
     ctrl.id = V4L2_CID_MPEG_VIDEO_H264_LEVEL;
-    if (strcmp(params->hardware_h264_level, "4.0") == 0) {
+    if (strcmp(params->h264_level, "4.0") == 0) {
         ctrl.value = V4L2_MPEG_VIDEO_H264_LEVEL_4_0;
-    } else if (strcmp(params->hardware_h264_level, "4.1") == 0) {
+    } else if (strcmp(params->h264_level, "4.1") == 0) {
         ctrl.value = V4L2_MPEG_VIDEO_H264_LEVEL_4_1;
     } else {
         ctrl.value = V4L2_MPEG_VIDEO_H264_LEVEL_4_2;

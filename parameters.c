@@ -132,14 +132,10 @@ bool parameters_unserialize(const uint8_t *buf, size_t buf_size,
             (*params)->idr_period = atoi(val);
         } else if (strcmp(key, "Bitrate") == 0) {
             (*params)->bitrate = atoi(val);
-        } else if (strcmp(key, "HardwareH264Profile") == 0) {
-            (*params)->hardware_h264_profile = base64_decode(val);
-        } else if (strcmp(key, "HardwareH264Level") == 0) {
-            (*params)->hardware_h264_level = base64_decode(val);
-        } else if (strcmp(key, "SoftwareH264Profile") == 0) {
-            (*params)->software_h264_profile = base64_decode(val);
-        } else if (strcmp(key, "SoftwareH264Level") == 0) {
-            (*params)->software_h264_level = base64_decode(val);
+        } else if (strcmp(key, "H264Profile") == 0) {
+            (*params)->h264_profile = base64_decode(val);
+        } else if (strcmp(key, "H264Level") == 0) {
+            (*params)->h264_level = base64_decode(val);
         } else if (strcmp(key, "SecondaryWidth") == 0) {
             (*params)->secondary_width = atoi(val);
         } else if (strcmp(key, "SecondaryHeight") == 0) {
