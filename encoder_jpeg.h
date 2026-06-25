@@ -5,7 +5,7 @@
 
 typedef void encoder_jpeg_t;
 
-typedef void (*encoder_jpeg_output_cb)(const uint8_t *mapped, uint64_t size,
+typedef void (*encoder_jpeg_output_cb)(const uint8_t *buffer, uint64_t size,
                                        uint64_t dts, uint64_t ntp);
 
 const char *encoder_jpeg_get_error();

@@ -207,8 +207,7 @@ failed:
 
 void encoder_software_h264_encode(encoder_software_h264_t *enc,
                                   uint8_t *buffer_mapped, int buffer_fd,
-                                  size_t buffer_size, uint64_t dts,
-                                  uint64_t ntp) {
+                                  uint64_t dts, uint64_t ntp) {
     encoder_software_h264_priv_t *encp = (encoder_software_h264_priv_t *)enc;
 
     pthread_mutex_lock(&encp->queue_mutex);
