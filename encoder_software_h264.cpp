@@ -148,16 +148,16 @@ bool encoder_software_h264_create(const parameters_t *params, int stride,
     encp->enc_params.sSpatialLayers[0].iSpatialBitrate = params->bitrate;
     encp->enc_params.sSpatialLayers[0].iMaxSpatialBitrate =
         (int)((double)params->bitrate * 1.2f);
-    if (strcmp(params->software_h264_profile, "high") == 0) {
+    if (strcmp(params->h264_profile, "high") == 0) {
         encp->enc_params.sSpatialLayers[0].uiProfileIdc = PRO_HIGH;
-    } else if (strcmp(params->software_h264_profile, "main") == 0) {
+    } else if (strcmp(params->h264_profile, "main") == 0) {
         encp->enc_params.sSpatialLayers[0].uiProfileIdc = PRO_MAIN;
     } else {
         encp->enc_params.sSpatialLayers[0].uiProfileIdc = PRO_BASELINE;
     }
-    if (strcmp(params->software_h264_level, "4.2") == 0) {
+    if (strcmp(params->h264_level, "4.2") == 0) {
         encp->enc_params.sSpatialLayers[0].uiLevelIdc = LEVEL_4_2;
-    } else if (strcmp(params->software_h264_level, "4.1") == 0) {
+    } else if (strcmp(params->h264_level, "4.1") == 0) {
         encp->enc_params.sSpatialLayers[0].uiLevelIdc = LEVEL_4_1;
     } else {
         encp->enc_params.sSpatialLayers[0].uiLevelIdc = LEVEL_4_0;
