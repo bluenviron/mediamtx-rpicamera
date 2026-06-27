@@ -19,9 +19,11 @@ const char *camera_get_error();
 bool camera_create(const parameters_t *params, camera_frame_cb frame_cb,
                    camera_error_cb error_cb, camera_t **cam);
 int camera_get_frame_size(camera_t *cam);
+int camera_get_secondary_frame_size(camera_t *cam);
 int camera_get_stride(camera_t *cam);
 int camera_get_secondary_stride(camera_t *cam);
 int camera_get_colorspace(camera_t *cam);
+int camera_get_secondary_colorspace(camera_t *cam);
 bool camera_start(camera_t *cam, parameters_t *params);
 void camera_reload_params(camera_t *cam, const parameters_t *params);
 void camera_stop(camera_t *cam);

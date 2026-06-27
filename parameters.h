@@ -45,6 +45,7 @@ typedef struct {
     unsigned int bitrate;
     char *h264_profile;
     char *h264_level;
+    unsigned int mjpeg_quality;
     unsigned int secondary_width;
     unsigned int secondary_height;
     float secondary_fps;

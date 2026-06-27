@@ -11,7 +11,6 @@
 
 #include "camera.h"
 #include "encoder.h"
-#include "encoder_jpeg.h"
 #include "parameters.h"
 #include "pipe.h"
 #include "text.h"
@@ -22,7 +21,7 @@ static parameters_t *params;
 static camera_t *cam;
 static text_t *text;
 static encoder_t *enc;
-static encoder_jpeg_t *enc_jpeg = NULL;
+static encoder_t *enc_secondary = NULL;
 
 static void on_frame(uint8_t *buffer_mapped, int buffer_fd, uint64_t dts,
                      uint64_t ntp, uint8_t *secondary_buffer_mapped) {
@@ -39,8 +38,9 @@ static void on_frame(uint8_t *buffer_mapped, int buffer_fd, uint64_t dts,
 
     encoder_encode(enc, buffer_mapped, buffer_fd, dts, ntp);
 
-    if (enc_jpeg != NULL && secondary_buffer_mapped != NULL) {
-        encoder_jpeg_encode(enc_jpeg, secondary_buffer_mapped, dts, ntp);
+    if (enc_secondary != NULL && secondary_buffer_mapped != NULL) {
+        encoder_encode(enc_secondary, secondary_buffer_mapped, buffer_fd, dts,
+                       ntp);
     }
 }
 
@@ -51,8 +51,8 @@ static void on_encoder_output(const uint8_t *buffer, uint64_t size,
     pthread_mutex_unlock(&pipe_out_mutex);
 }
 
-static void on_jpeg_output(const uint8_t *buffer, uint64_t size, uint64_t dts,
-                           uint64_t ntp) {
+static void on_encoder_secondary_output(const uint8_t *buffer, uint64_t size,
+                                        uint64_t dts, uint64_t ntp) {
     pthread_mutex_lock(&pipe_out_mutex);
     pipe_write_secondary_data(pipe_out_fd, buffer, size, dts, ntp);
     pthread_mutex_unlock(&pipe_out_mutex);
@@ -125,7 +125,7 @@ int main() {
         return -1;
     }
 
-    ok = encoder_create(params, camera_get_frame_size(cam),
+    ok = encoder_create(false, params, camera_get_frame_size(cam),
                         camera_get_stride(cam), camera_get_colorspace(cam),
                         on_encoder_output, &enc);
     if (!ok) {
@@ -135,13 +135,13 @@ int main() {
     }
 
     if (params->secondary_width != 0) {
-        ok = encoder_jpeg_create(
-            params->secondary_width, params->secondary_height,
-            params->secondary_mjpeg_quality, camera_get_secondary_stride(cam),
-            on_jpeg_output, &enc_jpeg);
+        ok = encoder_create(true, params, camera_get_secondary_frame_size(cam),
+                            camera_get_secondary_stride(cam),
+                            camera_get_secondary_colorspace(cam),
+                            on_encoder_secondary_output, &enc_secondary);
         if (!ok) {
-            pipe_write_error(pipe_out_fd, "encoder_jpeg_create(): %s",
-                             encoder_jpeg_get_error());
+            pipe_write_error(pipe_out_fd, "encoder_create(): %s",
+                             encoder_get_error());
             return -1;
         }
     }
@@ -168,6 +168,9 @@ int main() {
     }
 
     camera_stop(cam);
+    if (enc_secondary != NULL) {
+        encoder_destroy(enc_secondary);
+    }
     encoder_destroy(enc);
     text_destroy(text);
     camera_destroy(cam);

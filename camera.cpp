@@ -422,6 +422,11 @@ int camera_get_frame_size(camera_t *cam) {
     return camp->video_stream->configuration().frameSize;
 }
 
+int camera_get_secondary_frame_size(camera_t *cam) {
+    CameraPriv *camp = (CameraPriv *)cam;
+    return camp->secondary_stream->configuration().frameSize;
+}
+
 int camera_get_stride(camera_t *cam) {
     CameraPriv *camp = (CameraPriv *)cam;
     return camp->video_stream->configuration().stride;
@@ -435,6 +440,12 @@ int camera_get_secondary_stride(camera_t *cam) {
 int camera_get_colorspace(camera_t *cam) {
     CameraPriv *camp = (CameraPriv *)cam;
     return get_v4l2_colorspace(camp->video_stream->configuration().colorSpace);
+}
+
+int camera_get_secondary_colorspace(camera_t *cam) {
+    CameraPriv *camp = (CameraPriv *)cam;
+    return get_v4l2_colorspace(
+        camp->secondary_stream->configuration().colorSpace);
 }
 
 static void fill_dynamic_controls(ControlList *ctrls,

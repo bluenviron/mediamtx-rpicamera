@@ -10,7 +10,12 @@
 
 #include "encoder.h"
 #include "encoder_hardware_h264.h"
+#include "encoder_mjpeg.h"
 #include "encoder_software_h264.h"
+
+#define ENCODER_HARDWARE_H264 0
+#define ENCODER_SOFTWARE_H264 1
+#define ENCODER_MJPEG 2
 
 static char errbuf[256];
 
@@ -36,23 +41,29 @@ typedef struct {
     destroy_cb destroy;
 } encoder_priv_t;
 
-bool encoder_create(const parameters_t *params, int frame_size, int stride,
-                    int colorspace, encoder_output_cb output_cb,
-                    encoder_t **enc) {
+bool encoder_create(bool is_secondary, const parameters_t *params,
+                    int frame_size, int stride, int colorspace,
+                    encoder_output_cb output_cb, encoder_t **enc) {
     *enc = malloc(sizeof(encoder_priv_t));
     encoder_priv_t *encp = (encoder_priv_t *)(*enc);
     memset(encp, 0, sizeof(encoder_priv_t));
 
-    bool hardH264;
+    int variant;
 
-    if (strcmp(params->codec, "hardwareH264") == 0) {
-        hardH264 = true;
+    if (!is_secondary) {
+        if (strcmp(params->codec, "hardwareH264") == 0) {
+            variant = ENCODER_HARDWARE_H264;
+        } else if (strcmp(params->codec, "softwareH264") == 0) {
+            variant = ENCODER_SOFTWARE_H264;
+        } else {
+            variant = ENCODER_MJPEG;
+        }
     } else {
-        hardH264 = false;
+        variant = ENCODER_MJPEG;
     }
 
-    if (hardH264) {
-        printf("using hardware H264 encoder\n");
+    if (variant == ENCODER_HARDWARE_H264) {
+        fprintf(stderr, "using hardware H264 encoder\n");
 
         encoder_hardware_h264_t *hardware_h264;
         bool res = encoder_hardware_h264_create(
@@ -66,8 +77,9 @@ bool encoder_create(const parameters_t *params, int frame_size, int stride,
         encp->encode = encoder_hardware_h264_encode;
         encp->reload_params = encoder_hardware_h264_reload_params;
         encp->destroy = encoder_hardware_h264_destroy;
-    } else {
-        printf("using software H264 encoder\n");
+
+    } else if (variant == ENCODER_SOFTWARE_H264) {
+        fprintf(stderr, "using software H264 encoder\n");
 
         encoder_software_h264_t *software_h264;
         bool res = encoder_software_h264_create(params, stride, colorspace,
@@ -80,6 +92,21 @@ bool encoder_create(const parameters_t *params, int frame_size, int stride,
         encp->implementation = software_h264;
         encp->encode = encoder_software_h264_encode;
         encp->reload_params = encoder_software_h264_reload_params;
+
+    } else {
+        fprintf(stderr, "using MJPEG encoder\n");
+
+        encoder_mjpeg_t *mjpeg;
+        bool res = encoder_mjpeg_create(is_secondary, params, stride, output_cb,
+                                        &mjpeg);
+        if (!res) {
+            set_error(encoder_mjpeg_get_error());
+            goto failed;
+        }
+
+        encp->implementation = mjpeg;
+        encp->encode = encoder_mjpeg_encode;
+        encp->reload_params = encoder_mjpeg_reload_params;
     }
 
     return true;
