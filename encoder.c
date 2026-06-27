@@ -49,15 +49,13 @@ bool encoder_create(bool is_secondary, const parameters_t *params,
     memset(encp, 0, sizeof(encoder_priv_t));
 
     int variant;
+    const char *codec =
+        (!is_secondary) ? params->codec : params->secondary_codec;
 
-    if (!is_secondary) {
-        if (strcmp(params->codec, "hardwareH264") == 0) {
-            variant = ENCODER_HARDWARE_H264;
-        } else if (strcmp(params->codec, "softwareH264") == 0) {
-            variant = ENCODER_SOFTWARE_H264;
-        } else {
-            variant = ENCODER_MJPEG;
-        }
+    if (codec != NULL && strcmp(codec, "hardwareH264") == 0) {
+        variant = ENCODER_HARDWARE_H264;
+    } else if (codec != NULL && strcmp(codec, "softwareH264") == 0) {
+        variant = ENCODER_SOFTWARE_H264;
     } else {
         variant = ENCODER_MJPEG;
     }
@@ -66,8 +64,9 @@ bool encoder_create(bool is_secondary, const parameters_t *params,
         fprintf(stderr, "using hardware H264 encoder\n");
 
         encoder_hardware_h264_t *hardware_h264;
-        bool res = encoder_hardware_h264_create(
-            params, frame_size, stride, colorspace, output_cb, &hardware_h264);
+        bool res = encoder_hardware_h264_create(is_secondary, params,
+                                                frame_size, stride, colorspace,
+                                                output_cb, &hardware_h264);
         if (!res) {
             set_error(encoder_hardware_h264_get_error());
             goto failed;
@@ -82,8 +81,9 @@ bool encoder_create(bool is_secondary, const parameters_t *params,
         fprintf(stderr, "using software H264 encoder\n");
 
         encoder_software_h264_t *software_h264;
-        bool res = encoder_software_h264_create(params, stride, colorspace,
-                                                output_cb, &software_h264);
+        bool res =
+            encoder_software_h264_create(is_secondary, params, stride,
+                                         colorspace, output_cb, &software_h264);
         if (!res) {
             set_error(encoder_software_h264_get_error());
             goto failed;

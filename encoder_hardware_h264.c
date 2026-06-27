@@ -38,6 +38,7 @@ typedef struct {
     pthread_t output_thread;
     pthread_mutex_t destroyed_mutex;
     bool destroyed;
+    bool is_secondary;
 } encoder_hardware_h264_priv_t;
 
 static bool is_destroyed_safe(encoder_hardware_h264_priv_t *encp) {
@@ -100,10 +101,12 @@ static void *output_thread(void *userdata) {
     return NULL;
 }
 
-static bool fill_dynamic_params(int fd, const parameters_t *params) {
+static bool fill_dynamic_params(int fd, bool is_secondary,
+                                const parameters_t *params) {
     struct v4l2_control ctrl = {0};
     ctrl.id = V4L2_CID_MPEG_VIDEO_H264_I_PERIOD;
-    ctrl.value = params->idr_period;
+    ctrl.value =
+        (!is_secondary) ? params->idr_period : params->secondary_idr_period;
     int res = ioctl(fd, VIDIOC_S_CTRL, &ctrl);
     if (res != 0) {
         set_error("unable to set IDR period");
@@ -111,7 +114,7 @@ static bool fill_dynamic_params(int fd, const parameters_t *params) {
     }
 
     ctrl.id = V4L2_CID_MPEG_VIDEO_BITRATE;
-    ctrl.value = params->bitrate;
+    ctrl.value = (!is_secondary) ? params->bitrate : params->secondary_bitrate;
     res = ioctl(fd, VIDIOC_S_CTRL, &ctrl);
     if (res != 0) {
         set_error("unable to set bitrate");
@@ -121,8 +124,8 @@ static bool fill_dynamic_params(int fd, const parameters_t *params) {
     return true;
 }
 
-bool encoder_hardware_h264_create(const parameters_t *params, int frame_size,
-                                  int stride, int colorspace,
+bool encoder_hardware_h264_create(bool is_secondary, const parameters_t *params,
+                                  int frame_size, int stride, int colorspace,
                                   encoder_hardware_h264_output_cb output_cb,
                                   encoder_hardware_h264_t **enc) {
     *enc = malloc(sizeof(encoder_hardware_h264_priv_t));
@@ -135,16 +138,26 @@ bool encoder_hardware_h264_create(const parameters_t *params, int frame_size,
         goto failed;
     }
 
-    bool res2 = fill_dynamic_params(encp->fd, params);
+    bool res2 = fill_dynamic_params(encp->fd, is_secondary, params);
     if (!res2) {
         goto failed;
     }
 
+    const char *h264_profile =
+        (!is_secondary) ? params->h264_profile : params->secondary_h264_profile;
+    const char *h264_level =
+        (!is_secondary) ? params->h264_level : params->secondary_h264_level;
+    unsigned int width =
+        (!is_secondary) ? params->width : params->secondary_width;
+    unsigned int height =
+        (!is_secondary) ? params->height : params->secondary_height;
+    float fps = (!is_secondary) ? params->fps : params->secondary_fps;
+
     struct v4l2_control ctrl = {0};
     ctrl.id = V4L2_CID_MPEG_VIDEO_H264_PROFILE;
-    if (strcmp(params->h264_profile, "baseline") == 0) {
+    if (strcmp(h264_profile, "baseline") == 0) {
         ctrl.value = V4L2_MPEG_VIDEO_H264_PROFILE_BASELINE;
-    } else if (strcmp(params->h264_profile, "main") == 0) {
+    } else if (strcmp(h264_profile, "main") == 0) {
         ctrl.value = V4L2_MPEG_VIDEO_H264_PROFILE_MAIN;
     } else {
         ctrl.value = V4L2_MPEG_VIDEO_H264_PROFILE_HIGH;
@@ -156,9 +169,9 @@ bool encoder_hardware_h264_create(const parameters_t *params, int frame_size,
     }
 
     ctrl.id = V4L2_CID_MPEG_VIDEO_H264_LEVEL;
-    if (strcmp(params->h264_level, "4.0") == 0) {
+    if (strcmp(h264_level, "4.0") == 0) {
         ctrl.value = V4L2_MPEG_VIDEO_H264_LEVEL_4_0;
-    } else if (strcmp(params->h264_level, "4.1") == 0) {
+    } else if (strcmp(h264_level, "4.1") == 0) {
         ctrl.value = V4L2_MPEG_VIDEO_H264_LEVEL_4_1;
     } else {
         ctrl.value = V4L2_MPEG_VIDEO_H264_LEVEL_4_2;
@@ -182,8 +195,8 @@ bool encoder_hardware_h264_create(const parameters_t *params, int frame_size,
 
     struct v4l2_format fmt = {0};
     fmt.type = V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE;
-    fmt.fmt.pix_mp.width = params->width;
-    fmt.fmt.pix_mp.height = params->height;
+    fmt.fmt.pix_mp.width = width;
+    fmt.fmt.pix_mp.height = height;
     fmt.fmt.pix_mp.pixelformat = V4L2_PIX_FMT_YUV420;
     fmt.fmt.pix_mp.field = V4L2_FIELD_ANY;
     fmt.fmt.pix_mp.colorspace = colorspace;
@@ -196,8 +209,8 @@ bool encoder_hardware_h264_create(const parameters_t *params, int frame_size,
     }
 
     fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE;
-    fmt.fmt.pix_mp.width = params->width;
-    fmt.fmt.pix_mp.height = params->height;
+    fmt.fmt.pix_mp.width = width;
+    fmt.fmt.pix_mp.height = height;
     fmt.fmt.pix_mp.pixelformat = V4L2_PIX_FMT_H264;
     fmt.fmt.pix_mp.field = V4L2_FIELD_ANY;
     fmt.fmt.pix_mp.colorspace = V4L2_COLORSPACE_DEFAULT;
@@ -213,7 +226,7 @@ bool encoder_hardware_h264_create(const parameters_t *params, int frame_size,
     struct v4l2_streamparm parm = {0};
     parm.type = V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE;
     parm.parm.output.timeperframe.numerator = 1;
-    parm.parm.output.timeperframe.denominator = params->fps;
+    parm.parm.output.timeperframe.denominator = fps;
     res = ioctl(encp->fd, VIDIOC_S_PARM, &parm);
     if (res != 0) {
         set_error("unable to set fps");
@@ -288,6 +301,7 @@ bool encoder_hardware_h264_create(const parameters_t *params, int frame_size,
     encp->frame_size = frame_size;
     encp->buffer_count = params->buffer_count;
     encp->cur_buffer = 0;
+    encp->is_secondary = is_secondary;
     encp->output_cb = output_cb;
     pthread_mutex_init(&encp->destroyed_mutex, NULL);
     encp->destroyed = false;
@@ -341,7 +355,7 @@ void encoder_hardware_h264_encode(encoder_hardware_h264_t *enc,
 void encoder_hardware_h264_reload_params(encoder_hardware_h264_t *enc,
                                          const parameters_t *params) {
     encoder_hardware_h264_priv_t *encp = (encoder_hardware_h264_priv_t *)enc;
-    fill_dynamic_params(encp->fd, params);
+    fill_dynamic_params(encp->fd, encp->is_secondary, params);
 }
 
 void encoder_hardware_h264_destroy(encoder_hardware_h264_t *enc) {

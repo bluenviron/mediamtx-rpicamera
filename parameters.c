@@ -138,12 +138,22 @@ bool parameters_unserialize(const uint8_t *buf, size_t buf_size,
             (*params)->h264_level = base64_decode(val);
         } else if (strcmp(key, "MJPEGQuality") == 0) {
             (*params)->mjpeg_quality = atoi(val);
+        } else if (strcmp(key, "SecondaryCodec") == 0) {
+            (*params)->secondary_codec = base64_decode(val);
         } else if (strcmp(key, "SecondaryWidth") == 0) {
             (*params)->secondary_width = atoi(val);
         } else if (strcmp(key, "SecondaryHeight") == 0) {
             (*params)->secondary_height = atoi(val);
         } else if (strcmp(key, "SecondaryFPS") == 0) {
             (*params)->secondary_fps = atof(val);
+        } else if (strcmp(key, "SecondaryIDRPeriod") == 0) {
+            (*params)->secondary_idr_period = atoi(val);
+        } else if (strcmp(key, "SecondaryBitrate") == 0) {
+            (*params)->secondary_bitrate = atoi(val);
+        } else if (strcmp(key, "SecondaryH264Profile") == 0) {
+            (*params)->secondary_h264_profile = base64_decode(val);
+        } else if (strcmp(key, "SecondaryH264Level") == 0) {
+            (*params)->secondary_h264_level = base64_decode(val);
         } else if (strcmp(key, "SecondaryMJPEGQuality") == 0) {
             (*params)->secondary_mjpeg_quality = atoi(val);
         }
@@ -201,6 +211,15 @@ void parameters_destroy(parameters_t *params) {
     }
     if (params->codec != NULL) {
         free(params->codec);
+    }
+    if (params->secondary_codec != NULL) {
+        free(params->secondary_codec);
+    }
+    if (params->secondary_h264_profile != NULL) {
+        free(params->secondary_h264_profile);
+    }
+    if (params->secondary_h264_level != NULL) {
+        free(params->secondary_h264_level);
     }
     free(params);
 }

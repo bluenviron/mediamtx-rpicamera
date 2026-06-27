@@ -34,18 +34,22 @@ typedef struct {
     uint8_t *data_buffer;
     uint64_t data_dts;
     uint64_t data_ntp;
+    bool is_secondary;
 } encoder_software_h264_priv_t;
 
 static void encode(encoder_software_h264_priv_t *encp, uint8_t *buffer,
                    uint64_t dts, uint64_t ntp) {
     pthread_mutex_lock(&encp->mutex);
 
+    unsigned int height = (!encp->is_secondary)
+                              ? encp->params->height
+                              : encp->params->secondary_height;
+
     encp->pic.pData[0] = buffer; // Y
     encp->pic.pData[1] =
-        encp->pic.pData[0] + encp->pic.iStride[0] * encp->params->height; // U
+        encp->pic.pData[0] + encp->pic.iStride[0] * height; // U
     encp->pic.pData[2] =
-        encp->pic.pData[1] +
-        (encp->pic.iStride[0] / 2) * (encp->params->height / 2); // V
+        encp->pic.pData[1] + (encp->pic.iStride[0] / 2) * (height / 2); // V
     encp->pic.uiTimeStamp = dts / 1000;
 
     memset(&encp->info, 0, sizeof(SFrameBSInfo));
@@ -98,13 +102,27 @@ static void *thread_main(void *userdata) {
     return NULL;
 }
 
-bool encoder_software_h264_create(const parameters_t *params, int stride,
-                                  int colorspace,
+bool encoder_software_h264_create(bool is_secondary, const parameters_t *params,
+                                  int stride, int colorspace,
                                   encoder_software_h264_output_cb output_cb,
                                   encoder_software_h264_t **enc) {
     *enc = malloc(sizeof(encoder_software_h264_priv_t));
     encoder_software_h264_priv_t *encp = (encoder_software_h264_priv_t *)(*enc);
     memset(encp, 0, sizeof(encoder_software_h264_priv_t));
+
+    unsigned int width =
+        (!is_secondary) ? params->width : params->secondary_width;
+    unsigned int height =
+        (!is_secondary) ? params->height : params->secondary_height;
+    float fps = (!is_secondary) ? params->fps : params->secondary_fps;
+    unsigned int bitrate =
+        (!is_secondary) ? params->bitrate : params->secondary_bitrate;
+    unsigned int idr_period =
+        (!is_secondary) ? params->idr_period : params->secondary_idr_period;
+    const char *h264_profile =
+        (!is_secondary) ? params->h264_profile : params->secondary_h264_profile;
+    const char *h264_level =
+        (!is_secondary) ? params->h264_level : params->secondary_h264_level;
 
     int videoFormat;
 
@@ -117,11 +135,11 @@ bool encoder_software_h264_create(const parameters_t *params, int stride,
     encp->encoder->GetDefaultParams(&encp->enc_params);
 
     encp->enc_params.iUsageType = CAMERA_VIDEO_REAL_TIME;
-    encp->enc_params.fMaxFrameRate = params->fps;
-    encp->enc_params.iPicWidth = params->width;
-    encp->enc_params.iPicHeight = params->height;
-    encp->enc_params.iTargetBitrate = params->bitrate;
-    encp->enc_params.iMaxBitrate = (int)((double)params->bitrate * 1.2f);
+    encp->enc_params.fMaxFrameRate = fps;
+    encp->enc_params.iPicWidth = width;
+    encp->enc_params.iPicHeight = height;
+    encp->enc_params.iTargetBitrate = bitrate;
+    encp->enc_params.iMaxBitrate = (int)((double)bitrate * 1.2f);
     encp->enc_params.iRCMode = RC_BITRATE_MODE;
     encp->enc_params.iTemporalLayerNum = 1;
     encp->enc_params.iSpatialLayerNum = 1;
@@ -133,7 +151,7 @@ bool encoder_software_h264_create(const parameters_t *params, int stride,
     encp->enc_params.bEnableLongTermReference = false;
     encp->enc_params.iLtrMarkPeriod = 0;
     encp->enc_params.iComplexityMode = LOW_COMPLEXITY;
-    encp->enc_params.uiIntraPeriod = params->idr_period;
+    encp->enc_params.uiIntraPeriod = idr_period;
     encp->enc_params.eSpsPpsIdStrategy = CONSTANT_ID;
     encp->enc_params.bPrefixNalAddingCtrl = false;
     encp->enc_params.iLoopFilterDisableIdc = 0;
@@ -142,22 +160,22 @@ bool encoder_software_h264_create(const parameters_t *params, int stride,
     encp->enc_params.iMultipleThreadIdc = 0;
     encp->enc_params.bUseLoadBalancing = false;
 
-    encp->enc_params.sSpatialLayers[0].iVideoWidth = params->width;
-    encp->enc_params.sSpatialLayers[0].iVideoHeight = params->height;
-    encp->enc_params.sSpatialLayers[0].fFrameRate = params->fps;
-    encp->enc_params.sSpatialLayers[0].iSpatialBitrate = params->bitrate;
+    encp->enc_params.sSpatialLayers[0].iVideoWidth = width;
+    encp->enc_params.sSpatialLayers[0].iVideoHeight = height;
+    encp->enc_params.sSpatialLayers[0].fFrameRate = fps;
+    encp->enc_params.sSpatialLayers[0].iSpatialBitrate = bitrate;
     encp->enc_params.sSpatialLayers[0].iMaxSpatialBitrate =
-        (int)((double)params->bitrate * 1.2f);
-    if (strcmp(params->h264_profile, "high") == 0) {
+        (int)((double)bitrate * 1.2f);
+    if (strcmp(h264_profile, "high") == 0) {
         encp->enc_params.sSpatialLayers[0].uiProfileIdc = PRO_HIGH;
-    } else if (strcmp(params->h264_profile, "main") == 0) {
+    } else if (strcmp(h264_profile, "main") == 0) {
         encp->enc_params.sSpatialLayers[0].uiProfileIdc = PRO_MAIN;
     } else {
         encp->enc_params.sSpatialLayers[0].uiProfileIdc = PRO_BASELINE;
     }
-    if (strcmp(params->h264_level, "4.2") == 0) {
+    if (strcmp(h264_level, "4.2") == 0) {
         encp->enc_params.sSpatialLayers[0].uiLevelIdc = LEVEL_4_2;
-    } else if (strcmp(params->h264_level, "4.1") == 0) {
+    } else if (strcmp(h264_level, "4.1") == 0) {
         encp->enc_params.sSpatialLayers[0].uiLevelIdc = LEVEL_4_1;
     } else {
         encp->enc_params.sSpatialLayers[0].uiLevelIdc = LEVEL_4_0;
@@ -183,8 +201,8 @@ bool encoder_software_h264_create(const parameters_t *params, int stride,
     encp->encoder->SetOption(ENCODER_OPTION_DATAFORMAT, &videoFormat);
 
     memset(&encp->pic, 0, sizeof(SSourcePicture));
-    encp->pic.iPicWidth = params->width;
-    encp->pic.iPicHeight = params->height;
+    encp->pic.iPicWidth = width;
+    encp->pic.iPicHeight = height;
     encp->pic.iColorFormat = videoFormatI420;
     encp->pic.iStride[0] = stride;
     encp->pic.iStride[1] = stride >> 1;
@@ -192,6 +210,7 @@ bool encoder_software_h264_create(const parameters_t *params, int stride,
 
     encp->params = params;
     encp->output_cb = output_cb;
+    encp->is_secondary = is_secondary;
     pthread_mutex_init(&encp->mutex, NULL);
 
     pthread_mutex_init(&encp->queue_mutex, NULL);
@@ -232,25 +251,39 @@ void encoder_software_h264_reload_params(encoder_software_h264_t *enc,
 
     pthread_mutex_lock(&encp->mutex);
 
-    int32_t idrInterval = params->idr_period;
-    encp->encoder->SetOption(ENCODER_OPTION_IDR_INTERVAL, &idrInterval);
+    unsigned int old_idr_period = (!encp->is_secondary)
+                                      ? encp->params->idr_period
+                                      : encp->params->secondary_idr_period;
+    unsigned int old_bitrate = (!encp->is_secondary)
+                                   ? encp->params->bitrate
+                                   : encp->params->secondary_bitrate;
+    unsigned int idr_period = (!encp->is_secondary)
+                                  ? params->idr_period
+                                  : params->secondary_idr_period;
+    unsigned int bitrate =
+        (!encp->is_secondary) ? params->bitrate : params->secondary_bitrate;
 
-    if (params->bitrate != encp->params->bitrate) {
-        if (params->bitrate > encp->params->bitrate) {
+    if (idr_period != old_idr_period) {
+        int32_t idrInterval = idr_period;
+        encp->encoder->SetOption(ENCODER_OPTION_IDR_INTERVAL, &idrInterval);
+    }
+
+    if (bitrate != old_bitrate) {
+        if (bitrate > old_bitrate) {
             SBitrateInfo bitrateInfo;
             bitrateInfo.iLayer = SPATIAL_LAYER_0;
-            bitrateInfo.iBitrate = (int)((double)params->bitrate * 1.2f);
+            bitrateInfo.iBitrate = (int)((double)bitrate * 1.2f);
             encp->encoder->SetOption(ENCODER_OPTION_MAX_BITRATE, &bitrateInfo);
 
-            bitrateInfo.iBitrate = params->bitrate;
+            bitrateInfo.iBitrate = bitrate;
             encp->encoder->SetOption(ENCODER_OPTION_BITRATE, &bitrateInfo);
         } else {
             SBitrateInfo bitrateInfo;
             bitrateInfo.iLayer = SPATIAL_LAYER_0;
-            bitrateInfo.iBitrate = params->bitrate;
+            bitrateInfo.iBitrate = bitrate;
             encp->encoder->SetOption(ENCODER_OPTION_BITRATE, &bitrateInfo);
 
-            bitrateInfo.iBitrate = (int)((double)params->bitrate * 1.2f);
+            bitrateInfo.iBitrate = (int)((double)bitrate * 1.2f);
             encp->encoder->SetOption(ENCODER_OPTION_MAX_BITRATE, &bitrateInfo);
         }
     }

@@ -24,7 +24,8 @@ static encoder_t *enc;
 static encoder_t *enc_secondary = NULL;
 
 static void on_frame(uint8_t *buffer_mapped, int buffer_fd, uint64_t dts,
-                     uint64_t ntp, uint8_t *secondary_buffer_mapped) {
+                     uint64_t ntp, uint8_t *secondary_buffer_mapped,
+                     int secondary_buffer_fd) {
     // mapped DMA buffers require a DMA_BUF_IOCTL_SYNC before and after usage.
     // https://forums.raspberrypi.com/viewtopic.php?t=352554
     struct dma_buf_sync dma_sync = {0};
@@ -39,8 +40,8 @@ static void on_frame(uint8_t *buffer_mapped, int buffer_fd, uint64_t dts,
     encoder_encode(enc, buffer_mapped, buffer_fd, dts, ntp);
 
     if (enc_secondary != NULL && secondary_buffer_mapped != NULL) {
-        encoder_encode(enc_secondary, secondary_buffer_mapped, buffer_fd, dts,
-                       ntp);
+        encoder_encode(enc_secondary, secondary_buffer_mapped,
+                       secondary_buffer_fd, dts, ntp);
     }
 }
 
@@ -81,6 +82,9 @@ static bool handle_command(const uint8_t *buf, uint32_t size) {
         camera_reload_params(cam, new_params);
         text_reload_params(text, new_params);
         encoder_reload_params(enc, new_params);
+        if (enc_secondary != NULL) {
+            encoder_reload_params(enc_secondary, new_params);
+        }
         parameters_destroy(params);
         params = new_params;
     }
