@@ -46,7 +46,7 @@ static void encode(encoder_software_h264_priv_t *encp, uint8_t *buffer,
     encp->pic.pData[2] =
         encp->pic.pData[1] +
         (encp->pic.iStride[0] / 2) * (encp->params->height / 2); // V
-    encp->pic.uiTimeStamp = dts / 1000000;
+    encp->pic.uiTimeStamp = dts / 1000;
 
     memset(&encp->info, 0, sizeof(SFrameBSInfo));
     int res = encp->encoder->EncodeFrame(&encp->pic, &encp->info);
@@ -169,7 +169,7 @@ bool encoder_software_h264_create(const parameters_t *params, int stride,
         encp->enc_params.sSpatialLayers[0].uiColorMatrix = 6;
     }
     encp->enc_params.sSpatialLayers[0].sSliceArgument.uiSliceMode =
-        SM_FIXEDSLCNUM_SLICE;
+        SM_SINGLE_SLICE;
 
     res = encp->encoder->InitializeExt(&encp->enc_params);
     if (res != cmResultSuccess) {
