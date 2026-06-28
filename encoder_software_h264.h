@@ -14,8 +14,8 @@ extern "C" {
 #endif
 
 const char *encoder_software_h264_get_error();
-bool encoder_software_h264_create(const parameters_t *params, int stride,
-                                  int colorspace,
+bool encoder_software_h264_create(bool is_secondary, const parameters_t *params,
+                                  int stride, int colorspace,
                                   encoder_software_h264_output_cb output_cb,
                                   encoder_software_h264_t **enc);
 void encoder_software_h264_encode(encoder_software_h264_t *enc,

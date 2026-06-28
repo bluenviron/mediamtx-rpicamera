@@ -365,6 +365,8 @@ static void on_request_complete(Request *request) {
     FrameBuffer *buffer = request->buffers().at(camp->video_stream);
 
     uint8_t *secondary_buffer_mapped = NULL;
+    int secondary_buffer_fd = 0;
+
     if (camp->secondary_stream != NULL) {
         struct timespec now;
         clock_gettime(CLOCK_MONOTONIC, &now);
@@ -377,6 +379,7 @@ static void on_request_complete(Request *request) {
             FrameBuffer *secondary_buffer =
                 request->buffers().at(camp->secondary_stream);
             secondary_buffer_mapped = camp->mapped_buffers.at(secondary_buffer);
+            secondary_buffer_fd = secondary_buffer->planes()[0].fd.get();
         }
     }
 
@@ -397,7 +400,7 @@ static void on_request_complete(Request *request) {
 
     camp->frame_cb(camp->mapped_buffers.at(buffer),
                    buffer->planes()[0].fd.get(), dts, ntp,
-                   secondary_buffer_mapped);
+                   secondary_buffer_mapped, secondary_buffer_fd);
 
     request->reuse(Request::ReuseFlag::ReuseBuffers);
 

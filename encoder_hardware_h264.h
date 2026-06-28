@@ -10,8 +10,8 @@ typedef void (*encoder_hardware_h264_output_cb)(const uint8_t *buffer,
                                                 uint64_t ntp);
 
 const char *encoder_hardware_h264_get_error();
-bool encoder_hardware_h264_create(const parameters_t *params, int frame_size,
-                                  int stride, int colorspace,
+bool encoder_hardware_h264_create(bool is_secondary, const parameters_t *params,
+                                  int frame_size, int stride, int colorspace,
                                   encoder_hardware_h264_output_cb output_cb,
                                   encoder_hardware_h264_t **enc);
 void encoder_hardware_h264_encode(encoder_hardware_h264_t *enc,
