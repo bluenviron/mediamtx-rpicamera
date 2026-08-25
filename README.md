@@ -14,7 +14,6 @@ This is embedded into all MediaMTX releases and shouldn't be downloaded unless y
 
    - Raspberry Pi OS Trixie
    - Raspberry Pi OS Bookworm
-   - Raspberry Pi OS Bullseye
 
 2. Install build dependencies:
 
@@ -46,7 +45,6 @@ This is embedded into all MediaMTX releases and shouldn't be downloaded unless y
 
    - Raspberry Pi OS Trixie
    - Raspberry Pi OS Bookworm
-   - Raspberry Pi OS Bullseye
 
    The external libcamera must have version &ge; 0.5.0 and &le; 0.70.
 
