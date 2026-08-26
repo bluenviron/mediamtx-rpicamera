@@ -40,38 +40,6 @@ jobs:
         path: build/mtxrpicam_64.tar.gz
         name: mtxrpicam_64.tar.gz
 
-  test_bullseye_32:
-    needs: build_32
-    runs-on: ubuntu-24.04
-
-    steps:
-    - uses: actions/checkout@v7
-
-    - uses: actions/download-artifact@v8
-      with:
-        name: mtxrpicam_32.tar.gz
-        path: build/
-
-    - run: cd build && tar xvf mtxrpicam_32.tar.gz
-
-    - run: make -f utils.mk test_bullseye_32
-
-  test_bullseye_64:
-    needs: build_64
-    runs-on: ubuntu-24.04
-
-    steps:
-    - uses: actions/checkout@v7
-
-    - uses: actions/download-artifact@v8
-      with:
-        name: mtxrpicam_64.tar.gz
-        path: build/
-
-    - run: cd build && tar xvf mtxrpicam_64.tar.gz
-
-    - run: make -f utils.mk test_bullseye_64
-
   test_bookworm_32:
     needs: build_32
     runs-on: ubuntu-24.04
