@@ -8,11 +8,12 @@ else
     OUT_DIR="mtxrpicam_32"
 fi
 
-mkdir -p $OUT_DIR
+rm -rf $OUT_DIR
+mkdir $OUT_DIR
 
 if [ -f ${DESTDIR}/${MESON_INSTALL_PREFIX}/lib/libcamera.so.9.9 ]; then
     cp -r ${DESTDIR}/${MESON_INSTALL_PREFIX}/share/libcamera/ipa $OUT_DIR/ipa_conf
-    cp -r ${DESTDIR}/${MESON_INSTALL_PREFIX}/lib/libcamera $OUT_DIR/ipa_module
+    cp -r ${DESTDIR}/${MESON_INSTALL_PREFIX}/lib/libcamera/ipa $OUT_DIR/ipa_module
     cp ${DESTDIR}/${MESON_INSTALL_PREFIX}/lib/libcamera-base.so.9.9 $OUT_DIR/
     cp ${DESTDIR}/${MESON_INSTALL_PREFIX}/lib/libcamera.so.9.9 $OUT_DIR/
     cp -r ${DESTDIR}/${MESON_INSTALL_PREFIX}/share/libpisp $OUT_DIR/libpisp
