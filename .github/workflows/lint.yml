@@ -2,20 +2,18 @@ name: lint
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 permissions:
   contents: read
 
 jobs:
-  clang_format:
+  lint:
     runs-on: ubuntu-24.04
 
     steps:
-    - uses: actions/checkout@v7
+      - uses: actions/checkout@v7
 
-    - run: make -f utils.mk format
-
-    - run: git diff --exit-code
+      - run: make -f utils.mk lint
