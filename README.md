@@ -11,7 +11,6 @@ This is embedded into all MediaMTX releases and shouldn't be downloaded unless y
 ## Compile
 
 1. You must be on a Raspberry Pi, running one of the following operating systems:
-
    - Raspberry Pi OS Trixie
    - Raspberry Pi OS Bookworm
 
@@ -42,7 +41,6 @@ This is embedded into all MediaMTX releases and shouldn't be downloaded unless y
 ## Compile against an external libcamera
 
 1. You must be on a Raspberry Pi, running one of the following operating systems:
-
    - Raspberry Pi OS Trixie
    - Raspberry Pi OS Bookworm
 
@@ -71,7 +69,7 @@ This is embedded into all MediaMTX releases and shouldn't be downloaded unless y
    libcamera-dev
    ```
 
-3. Build with `--wrap-mode=default` (that disables embedded libraries):
+4. Build with `--wrap-mode=default` (that disables embedded libraries):
 
    ```sh
    meson setup --wrap-mode=default build && DESTDIR=./prefix ninja -C build install
@@ -101,7 +99,7 @@ Check MediaMTX documentation for instructions on how to use the compiled compone
 
 All the code in this repository is released under the [MIT License](LICENSE). Compiled binaries include or make use of some third-party dependencies:
 
-* libcamera, released under the [LGPL-2.1 License](https://github.com/raspberrypi/libcamera/blob/main/COPYING.rst)
-* freetype, released under the [FreeType License](https://github.com/freetype/freetype/blob/master/LICENSE.TXT)
-* libjpeg-turbo, released under a [Modified BSD 3-clause License](https://github.com/libjpeg-turbo/libjpeg-turbo/blob/main/LICENSE.md)
-* openh264, released under the [BSD 2-clause License](https://github.com/cisco/openh264/blob/master/LICENSE)
+- libcamera, released under the [LGPL-2.1 License](https://github.com/raspberrypi/libcamera/blob/main/COPYING.rst)
+- freetype, released under the [FreeType License](https://github.com/freetype/freetype/blob/master/LICENSE.TXT)
+- libjpeg-turbo, released under a [Modified BSD 3-clause License](https://github.com/libjpeg-turbo/libjpeg-turbo/blob/main/LICENSE.md)
+- openh264, released under the [BSD 2-clause License](https://github.com/cisco/openh264/blob/master/LICENSE)
