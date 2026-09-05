@@ -3,7 +3,7 @@ name: release
 on:
   push:
     tags:
-    - 'v*'
+      - "v*"
 
 permissions:
   id-token: write
@@ -16,94 +16,94 @@ jobs:
     runs-on: ubuntu-24.04
 
     steps:
-    - uses: actions/checkout@v7
+      - uses: actions/checkout@v7
 
-    - run: make -f utils.mk build_32
+      - run: make -f utils.mk build_32
 
-    - run: cd build && tar -czf mtxrpicam_32.tar.gz mtxrpicam_32
+      - run: cd build && tar -czf mtxrpicam_32.tar.gz mtxrpicam_32
 
-    - uses: actions/upload-artifact@v7
-      with:
-        path: build/mtxrpicam_32.tar.gz
-        name: mtxrpicam_32.tar.gz
+      - uses: actions/upload-artifact@v7
+        with:
+          path: build/mtxrpicam_32.tar.gz
+          name: mtxrpicam_32.tar.gz
 
   build_64:
     runs-on: ubuntu-24.04
 
     steps:
-    - uses: actions/checkout@v7
+      - uses: actions/checkout@v7
 
-    - run: make -f utils.mk build_64
+      - run: make -f utils.mk build_64
 
-    - run: cd build && tar -czf mtxrpicam_64.tar.gz mtxrpicam_64
+      - run: cd build && tar -czf mtxrpicam_64.tar.gz mtxrpicam_64
 
-    - uses: actions/upload-artifact@v7
-      with:
-        path: build/mtxrpicam_64.tar.gz
-        name: mtxrpicam_64.tar.gz
+      - uses: actions/upload-artifact@v7
+        with:
+          path: build/mtxrpicam_64.tar.gz
+          name: mtxrpicam_64.tar.gz
 
   pre_release:
     needs:
-    - build_32
-    - build_64
+      - build_32
+      - build_64
     runs-on: ubuntu-24.04
 
     steps:
-    - uses: actions/download-artifact@v8
-      with:
-        name: mtxrpicam_32.tar.gz
-        path: binaries/
+      - uses: actions/download-artifact@v8
+        with:
+          name: mtxrpicam_32.tar.gz
+          path: binaries/
 
-    - uses: actions/download-artifact@v8
-      with:
-        name: mtxrpicam_64.tar.gz
-        path: binaries/
+      - uses: actions/download-artifact@v8
+        with:
+          name: mtxrpicam_64.tar.gz
+          path: binaries/
 
-    - run: cd binaries && sha256sum -b * > checksums.sha256
+      - run: cd binaries && sha256sum -b * > checksums.sha256
 
-    - uses: actions/attest@v4.2.2
-      with:
-        subject-path: '${{ github.workspace }}/binaries/*'
+      - uses: actions/attest@v4.2.2
+        with:
+          subject-path: "${{ github.workspace }}/binaries/*"
 
-    - uses: actions/upload-artifact@v7
-      with:
-        name: binaries
-        path: binaries
+      - uses: actions/upload-artifact@v7
+        with:
+          name: binaries
+          path: binaries
 
   github_release:
     needs:
-    - pre_release
+      - pre_release
     runs-on: ubuntu-24.04
 
     steps:
-    - uses: actions/download-artifact@v8
-      with:
-        name: binaries
-        path: binaries
+      - uses: actions/download-artifact@v8
+        with:
+          name: binaries
+          path: binaries
 
-    - uses: actions/github-script@v9
-      with:
-        github-token: ${{ secrets.GITHUB_TOKEN }}
-        script: |
-          const fs = require('fs').promises;
-          const { repo: { owner, repo } } = context;
+      - uses: actions/github-script@v9
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs').promises;
+            const { repo: { owner, repo } } = context;
 
-          const currentRelease = context.ref.split('/')[2];
+            const currentRelease = context.ref.split('/')[2];
 
-          const res = await github.rest.repos.createRelease({
-            owner,
-            repo,
-            tag_name: currentRelease,
-            name: currentRelease,
-          });
-          const release_id = res.data.id;
-
-          for (const name of await fs.readdir('./binaries/')) {
-            await github.rest.repos.uploadReleaseAsset({
+            const res = await github.rest.repos.createRelease({
               owner,
               repo,
-              release_id,
-              name,
-              data: await fs.readFile(`./binaries/${name}`),
+              tag_name: currentRelease,
+              name: currentRelease,
             });
-          }
+            const release_id = res.data.id;
+
+            for (const name of await fs.readdir('./binaries/')) {
+              await github.rest.repos.uploadReleaseAsset({
+                owner,
+                repo,
+                release_id,
+                name,
+                data: await fs.readFile(`./binaries/${name}`),
+              });
+            }
