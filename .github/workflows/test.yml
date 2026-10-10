@@ -2,9 +2,9 @@ name: test
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 permissions:
   contents: read
@@ -14,92 +14,92 @@ jobs:
     runs-on: ubuntu-24.04
 
     steps:
-    - uses: actions/checkout@v7
+      - uses: actions/checkout@v7
 
-    - run: make -f utils.mk build_32
+      - run: make -f utils.mk build_32
 
-    - run: cd build && tar -czf mtxrpicam_32.tar.gz mtxrpicam_32
+      - run: cd build && tar -czf mtxrpicam_32.tar.gz mtxrpicam_32
 
-    - uses: actions/upload-artifact@v7
-      with:
-        path: build/mtxrpicam_32.tar.gz
-        name: mtxrpicam_32.tar.gz
+      - uses: actions/upload-artifact@v7
+        with:
+          path: build/mtxrpicam_32.tar.gz
+          name: mtxrpicam_32.tar.gz
 
   build_64:
     runs-on: ubuntu-24.04
 
     steps:
-    - uses: actions/checkout@v7
+      - uses: actions/checkout@v7
 
-    - run: make -f utils.mk build_64
+      - run: make -f utils.mk build_64
 
-    - run: cd build && tar -czf mtxrpicam_64.tar.gz mtxrpicam_64
+      - run: cd build && tar -czf mtxrpicam_64.tar.gz mtxrpicam_64
 
-    - uses: actions/upload-artifact@v7
-      with:
-        path: build/mtxrpicam_64.tar.gz
-        name: mtxrpicam_64.tar.gz
+      - uses: actions/upload-artifact@v7
+        with:
+          path: build/mtxrpicam_64.tar.gz
+          name: mtxrpicam_64.tar.gz
 
   test_bookworm_32:
     needs: build_32
     runs-on: ubuntu-24.04
 
     steps:
-    - uses: actions/checkout@v7
+      - uses: actions/checkout@v7
 
-    - uses: actions/download-artifact@v8
-      with:
-        name: mtxrpicam_32.tar.gz
-        path: build/
+      - uses: actions/download-artifact@v8
+        with:
+          name: mtxrpicam_32.tar.gz
+          path: build/
 
-    - run: cd build && tar xvf mtxrpicam_32.tar.gz
+      - run: cd build && tar xvf mtxrpicam_32.tar.gz
 
-    - run: make -f utils.mk test_bookworm_32
+      - run: make -f utils.mk test_bookworm_32
 
   test_bookworm_64:
     needs: build_64
     runs-on: ubuntu-24.04
 
     steps:
-    - uses: actions/checkout@v7
+      - uses: actions/checkout@v7
 
-    - uses: actions/download-artifact@v8
-      with:
-        name: mtxrpicam_64.tar.gz
-        path: build/
+      - uses: actions/download-artifact@v8
+        with:
+          name: mtxrpicam_64.tar.gz
+          path: build/
 
-    - run: cd build && tar xvf mtxrpicam_64.tar.gz
+      - run: cd build && tar xvf mtxrpicam_64.tar.gz
 
-    - run: make -f utils.mk test_bookworm_64
+      - run: make -f utils.mk test_bookworm_64
 
   test_trixie_32:
     needs: build_32
     runs-on: ubuntu-24.04
 
     steps:
-    - uses: actions/checkout@v7
+      - uses: actions/checkout@v7
 
-    - uses: actions/download-artifact@v8
-      with:
-        name: mtxrpicam_32.tar.gz
-        path: build/
+      - uses: actions/download-artifact@v8
+        with:
+          name: mtxrpicam_32.tar.gz
+          path: build/
 
-    - run: cd build && tar xvf mtxrpicam_32.tar.gz
+      - run: cd build && tar xvf mtxrpicam_32.tar.gz
 
-    - run: make -f utils.mk test_trixie_32
+      - run: make -f utils.mk test_trixie_32
 
   test_trixie_64:
     needs: build_64
     runs-on: ubuntu-24.04
 
     steps:
-    - uses: actions/checkout@v7
+      - uses: actions/checkout@v7
 
-    - uses: actions/download-artifact@v8
-      with:
-        name: mtxrpicam_64.tar.gz
-        path: build/
+      - uses: actions/download-artifact@v8
+        with:
+          name: mtxrpicam_64.tar.gz
+          path: build/
 
-    - run: cd build && tar xvf mtxrpicam_64.tar.gz
+      - run: cd build && tar xvf mtxrpicam_64.tar.gz
 
-    - run: make -f utils.mk test_trixie_64
+      - run: make -f utils.mk test_trixie_64
