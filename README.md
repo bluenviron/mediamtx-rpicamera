@@ -85,7 +85,7 @@ This is embedded into all MediaMTX releases and shouldn't be downloaded unless y
 
 3. Build for every supported architecture:
 
-   ```
+   ```sh
    make -f utils.mk build
    ```
 

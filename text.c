@@ -8,6 +8,13 @@
 
 #include "text.h"
 
+#define TEXT_LINE_HEIGHT 34
+#define TEXT_START_X 12
+#define TEXT_BASELINE_Y 33
+#define TEXT_BACKGROUND_X 7
+#define TEXT_BACKGROUND_Y 7
+#define TEXT_BACKGROUND_EXTRA_WIDTH 10
+
 static char errbuf[256];
 
 static void set_error(const char *format, ...) {
@@ -83,6 +90,35 @@ static bool load_library(FT_Library *plibrary, FT_Face *pface) {
     return true;
 }
 
+static char *normalize_newlines(char *text) {
+    char *dest = text;
+
+    for (const char *src = text; *src != 0x00; src++) {
+        if (*src == '\r' && src[1] == '\n') {
+            src++;
+        }
+        *dest++ = *src;
+    }
+
+    *dest = 0x00;
+
+    return text;
+}
+
+static char *trim_newlines(char *text) {
+    while (*text == '\n') {
+        text++;
+    }
+
+    char *end = text + strlen(text) - 1;
+    while (end >= text && *end == '\n') {
+        *end = 0x00;
+        end--;
+    }
+
+    return text;
+}
+
 typedef struct {
     pthread_mutex_t mutex;
     char *text_overlay;
@@ -98,6 +134,8 @@ bool text_create(const parameters_t *params, int stride, text_t **text) {
     memset(textp, 0, sizeof(text_priv_t));
 
     textp->text_overlay = strdup(params->text_overlay);
+    textp->text_overlay = normalize_newlines(textp->text_overlay);
+    textp->text_overlay = trim_newlines(textp->text_overlay);
     textp->stride = stride;
     textp->height = params->height;
 
@@ -121,6 +159,16 @@ failed:
 
 static void draw_rect(uint8_t *buf, int stride, int height, int x, int y,
                       unsigned int rect_width, unsigned int rect_height) {
+    if (x < 0 || x >= stride || y < 0 || y >= height) {
+        return;
+    }
+    if (rect_width > (unsigned int)(stride - x)) {
+        rect_width = stride - x;
+    }
+    if (rect_height > (unsigned int)(height - y)) {
+        rect_height = height - y;
+    }
+
     uint8_t *Y = buf;
     uint8_t *U = Y + stride * height;
     uint8_t *V = U + (stride / 2) * (height / 2);
@@ -155,8 +203,12 @@ static void draw_bitmap(uint8_t *buf, int stride, int height,
             uint8_t v = bitmap->buffer[src_y * bitmap->pitch + src_x];
 
             if (v != 0) {
-                unsigned int dest_x = x + src_x;
-                unsigned int dest_y = y + src_y;
+                int dest_x = x + src_x;
+                int dest_y = y + src_y;
+                if (dest_x < 0 || dest_x >= stride || dest_y < 0 ||
+                    dest_y >= height) {
+                    continue;
+                }
                 int i1 = dest_y * stride + dest_x;
                 int i2 = dest_y / 2 * stride / 2 + dest_x / 2;
                 uint32_t opacity = (uint32_t)v;
@@ -175,19 +227,30 @@ static void draw_bitmap(uint8_t *buf, int stride, int height,
     }
 }
 
-static int get_text_width(FT_Face face, const char *text) {
-    int ret = 0;
+static int get_text_width(FT_Face face, const char *text, int *lines) {
+    int width = 0;
+    int max_width = 0;
+    *lines = 1;
 
     for (const char *ptr = text; *ptr != 0x00; ptr++) {
+        if (*ptr == '\n') {
+            if (width > max_width) {
+                max_width = width;
+            }
+            width = 0;
+            (*lines)++;
+            continue;
+        }
+
         int error = FT_Load_Char(face, *ptr, FT_LOAD_RENDER);
         if (error) {
             continue;
         }
 
-        ret += face->glyph->advance.x >> 6;
+        width += face->glyph->advance.x >> 6;
     }
 
-    return ret;
+    return width > max_width ? width : max_width;
 }
 
 void text_reload_params(text_t *text, const parameters_t *params) {
@@ -197,6 +260,8 @@ void text_reload_params(text_t *text, const parameters_t *params) {
 
     free(textp->text_overlay);
     textp->text_overlay = strdup(params->text_overlay);
+    textp->text_overlay = normalize_newlines(textp->text_overlay);
+    textp->text_overlay = trim_newlines(textp->text_overlay);
 
     if (params->text_overlay_enable && textp->library == NULL) {
         bool ok = load_library(&textp->library, &textp->face);
@@ -241,13 +306,22 @@ void text_draw(text_t *text, uint8_t *buf, uint64_t ntp) {
         char buffer[256];
         extended_strftime(buffer, 256, textp->text_overlay, &tv);
 
-        draw_rect(buf, textp->stride, textp->height, 7, 7,
-                  get_text_width(textp->face, buffer) + 10, 34);
+        int lines;
+        int width = get_text_width(textp->face, buffer, &lines);
+        draw_rect(buf, textp->stride, textp->height, TEXT_BACKGROUND_X,
+                  TEXT_BACKGROUND_Y, width + TEXT_BACKGROUND_EXTRA_WIDTH,
+                  lines * TEXT_LINE_HEIGHT);
 
-        int x = 12;
-        int y = 33;
+        int x = TEXT_START_X;
+        int y = TEXT_BASELINE_Y;
 
         for (const char *ptr = buffer; *ptr != 0x00; ptr++) {
+            if (*ptr == '\n') {
+                x = TEXT_START_X;
+                y += TEXT_LINE_HEIGHT;
+                continue;
+            }
+
             int error = FT_Load_Char(textp->face, *ptr, FT_LOAD_RENDER);
             if (error) {
                 continue;
