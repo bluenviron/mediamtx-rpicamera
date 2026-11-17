@@ -6,7 +6,7 @@ export DOCKERFILE_FORMAT
 
 define DOCKERFILE_PRETTIER
 FROM $(NODE_IMAGE)
-RUN yarn global add prettier@3.6.2
+RUN npm install -g prettier@3.6.2
 endef
 export DOCKERFILE_PRETTIER
 
