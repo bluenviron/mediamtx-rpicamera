@@ -2,7 +2,7 @@ ALPINE_IMAGE = alpine:3.24
 BINFMT_IMAGE = tonistiigi/binfmt:qemu-v10.0.4
 DEBIAN_BOOKWORM_IMAGE = debian:bookworm-slim
 DEBIAN_TRIXIE_IMAGE = debian:trixie-slim
-NODE_IMAGE = node:24-alpine3.24
+NODE_IMAGE = node:26-alpine3.24
 
 help:
 	@echo "usage: make [action]"
